@@ -6,10 +6,12 @@ import { OpeningHours } from "@/components/opening-hours"
 import { ContactSection } from "@/components/contact-section"
 import { Footer } from "@/components/footer"
 import { VersionBadge } from "@/components/version-badge"
+import { DemoOnboarding } from "@/components/demo-onboarding"
 
 export default function V1Page() {
   return (
     <div className="min-h-screen">
+      <DemoOnboarding />
       <VersionBadge version="ZÁKLADNÍ" />
       <Header />
       <main>

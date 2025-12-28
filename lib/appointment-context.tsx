@@ -1,8 +1,10 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { addDays, setHours, setMinutes, startOfWeek } from "date-fns"
+import { MOCK_PATIENTS } from "./mock-patients"
 
-export type AppointmentStatus = "confirmed" | "pending" | "completed" | "cancelled" | "no-show"
+export type AppointmentStatus = "confirmed" | "pending" | "completed" | "cancelled" | "no-show" | "blocked"
 
 export interface Appointment {
   id: string
@@ -32,123 +34,100 @@ interface AppointmentContextType {
 const AppointmentContext = createContext<AppointmentContextType | undefined>(undefined)
 
 // Mock appointments for demo
-const MOCK_APPOINTMENTS: Appointment[] = [
-  {
-    id: "apt-1",
-    patientId: "1",
-    patientName: "Jana Svobodová",
-    date: new Date(2025, 0, 2), // 2. ledna 2025
-    time: "08:30",
-    duration: 30,
-    service: "Preventivka",
-    status: "confirmed",
-    notes: "Pravidelná kontrola",
-    createdAt: new Date(2024, 11, 20),
-    updatedAt: new Date(2024, 11, 20)
-  },
-  {
-    id: "apt-2",
-    patientId: "2",
-    patientName: "Petr Novák",
-    date: new Date(2025, 0, 2),
-    time: "09:30",
-    duration: 60,
-    service: "Plomba",
-    status: "confirmed",
-    notes: "Výměna staré plomby",
-    createdAt: new Date(2024, 11, 21),
-    updatedAt: new Date(2024, 11, 21)
-  },
-  {
-    id: "apt-3",
-    patientId: "3",
-    patientName: "Eva Dvořáková",
-    date: new Date(2025, 0, 2),
-    time: "11:00",
-    duration: 30,
-    service: "Kontrola",
-    status: "pending",
-    createdAt: new Date(2024, 11, 22),
-    updatedAt: new Date(2024, 11, 22)
-  },
-  {
-    id: "apt-4",
-    patientId: "7",
-    patientName: "Barbora Horáková",
-    date: new Date(2025, 0, 2),
-    time: "14:00",
-    duration: 45,
-    service: "Dentální hygiena",
-    status: "confirmed",
-    createdAt: new Date(2024, 11, 23),
-    updatedAt: new Date(2024, 11, 23)
-  },
-  {
-    id: "apt-5",
-    patientId: "9",
-    patientName: "Tereza Němcová",
-    date: new Date(2025, 0, 2),
-    time: "15:30",
-    duration: 60,
-    service: "Bělení zubů",
-    status: "pending",
-    notes: "První sezení bělení",
-    createdAt: new Date(2024, 11, 24),
-    updatedAt: new Date(2024, 11, 24)
-  },
-  // Termíny pro další dny
-  {
-    id: "apt-6",
-    patientId: "4",
-    patientName: "Martin Procházka",
-    date: new Date(2025, 0, 3),
-    time: "09:00",
-    duration: 30,
-    service: "Preventivka",
-    status: "confirmed",
-    createdAt: new Date(2024, 11, 25),
-    updatedAt: new Date(2024, 11, 25)
-  },
-  {
-    id: "apt-7",
-    patientId: "6",
-    patientName: "Tomáš Veselý",
-    date: new Date(2025, 0, 3),
-    time: "10:30",
-    duration: 60,
-    service: "Korunka",
-    status: "confirmed",
-    notes: "Nasazení korunky",
-    createdAt: new Date(2024, 11, 26),
-    updatedAt: new Date(2024, 11, 26)
-  },
-  {
-    id: "apt-8",
-    patientId: "8",
-    patientName: "Jakub Kučera",
-    date: new Date(2025, 0, 6),
-    time: "08:00",
-    duration: 90,
-    service: "Extrakce",
-    status: "confirmed",
-    notes: "Extrakce zubu moudrosti",
-    createdAt: new Date(2024, 11, 27),
-    updatedAt: new Date(2024, 11, 27)
-  },
-  {
-    id: "apt-9",
-    patientId: "10",
-    patientName: "David Šmíd",
-    date: new Date(2025, 0, 6),
-    time: "11:00",
-    duration: 30,
-    service: "Kontrola",
-    status: "pending",
-    notes: "Kontrola po zákroku",
-    createdAt: new Date(2024, 11, 28),
-    updatedAt: new Date(2024, 11, 28)
+function generateMockAppointments(): Appointment[] {
+  const appointments: Appointment[] = []
+  const today = new Date()
+  const thisMonday = startOfWeek(today, { weekStartsOn: 1 })
+
+  const SERVICES = [
+    { name: "Preventivka", duration: 30 },
+    { name: "Kontrola", duration: 30 },
+    { name: "Plomba", duration: 60 },
+    { name: "Korunka", duration: 90 },
+    { name: "Implantát", duration: 120 },
+    { name: "Extrakce", duration: 90 },
+    { name: "Bělení zubů", duration: 60 },
+    { name: "Dentální hygiena", duration: 45 },
+    { name: "Ortodoncie", duration: 60 },
+    { name: "Ošetření kořenových kanálků", duration: 90 },
+  ]
+
+  const statuses: AppointmentStatus[] = ["confirmed", "pending", "completed", "no-show", "blocked"]
+  const statusWeights = [0.5, 0.3, 0.15, 0.05, 0.05]
+
+  const weightedRandom = <T,>(items: T[], weights: number[]): T => {
+    const random = Math.random()
+    let cumulative = 0
+
+    for (let i = 0; i < items.length; i++) {
+      cumulative += weights[i]
+      if (random < cumulative) {
+        return items[i]
+      }
+    }
+
+    return items[items.length - 1]
   }
-]
+
+  // Generate appointments for 2 weeks (Mon-Fri only)
+  for (let week = 0; week < 2; week++) {
+    for (let day = 0; day < 5; day++) {
+      // Only Mon-Fri
+      const currentDay = addDays(thisMonday, week * 7 + day)
+
+      // Random number of appointments per day (4-8)
+      const appointmentsPerDay = Math.floor(Math.random() * 5) + 4
+
+      const usedTimes = new Set<string>()
+
+      for (let i = 0; i < appointmentsPerDay; i++) {
+        // Random time between 8:00-16:00 (skip lunch 12-13)
+        let hour = Math.floor(Math.random() * 8) + 8 // 8-16
+        if (hour === 12) hour = 13 // skip lunch
+
+        const minute = Math.random() > 0.5 ? 0 : 30 // only full or half hours
+        const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+
+        // Skip if time already used
+        if (usedTimes.has(timeStr)) continue
+        usedTimes.add(timeStr)
+
+        const appointmentDate = setMinutes(setHours(currentDay, hour), minute)
+
+        // Random patient
+        const patient = MOCK_PATIENTS[Math.floor(Math.random() * MOCK_PATIENTS.length)]
+
+        // Random service
+        const service = SERVICES[Math.floor(Math.random() * SERVICES.length)]
+
+        // Random status
+        const status = weightedRandom(statuses, statusWeights)
+
+        appointments.push({
+          id: `apt-${week}-${day}-${i}-${Date.now()}`,
+          patientId: patient.id,
+          patientName: `${patient.personalInfo.firstName} ${patient.personalInfo.lastName}`,
+          date: appointmentDate,
+          time: timeStr,
+          duration: service.duration,
+          service: service.name,
+          status,
+          notes: Math.random() > 0.7 ? "Pacient žádá ranní termín" : undefined,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+      }
+    }
+  }
+
+  return appointments.sort((a, b) => {
+    const dateCompare = a.date.getTime() - b.date.getTime()
+    if (dateCompare !== 0) return dateCompare
+    return a.time.localeCompare(b.time)
+  })
+}
+
+const MOCK_APPOINTMENTS: Appointment[] = generateMockAppointments()
 
 export function AppointmentProvider({ children }: { children: ReactNode }) {
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -159,12 +138,14 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
 
     if (savedAppointments) {
       const parsed = JSON.parse(savedAppointments)
-      setAppointments(parsed.map((apt: any) => ({
-        ...apt,
-        date: new Date(apt.date),
-        createdAt: new Date(apt.createdAt),
-        updatedAt: new Date(apt.updatedAt)
-      })))
+      setAppointments(
+        parsed.map((apt: any) => ({
+          ...apt,
+          date: new Date(apt.date),
+          createdAt: new Date(apt.createdAt),
+          updatedAt: new Date(apt.updatedAt),
+        })),
+      )
     } else {
       // Initialize with mock data
       setAppointments(MOCK_APPOINTMENTS)
@@ -184,62 +165,63 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
       ...appointmentData,
       id: `apt-${Date.now()}`,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     }
-    setAppointments(prev => [...prev, newAppointment])
+    setAppointments((prev) => [...prev, newAppointment])
   }
 
   const updateAppointment = (id: string, updates: Partial<Appointment>) => {
-    setAppointments(prev => prev.map(apt =>
-      apt.id === id
-        ? { ...apt, ...updates, updatedAt: new Date() }
-        : apt
-    ))
+    setAppointments((prev) => prev.map((apt) => (apt.id === id ? { ...apt, ...updates, updatedAt: new Date() } : apt)))
   }
 
   const deleteAppointment = (id: string) => {
-    setAppointments(prev => prev.filter(apt => apt.id !== id))
+    setAppointments((prev) => prev.filter((apt) => apt.id !== id))
   }
 
   const getAppointmentsByDate = (date: Date): Appointment[] => {
-    return appointments.filter(apt => {
-      const aptDate = new Date(apt.date)
-      return (
-        aptDate.getFullYear() === date.getFullYear() &&
-        aptDate.getMonth() === date.getMonth() &&
-        aptDate.getDate() === date.getDate()
-      )
-    }).sort((a, b) => a.time.localeCompare(b.time))
+    return appointments
+      .filter((apt) => {
+        const aptDate = new Date(apt.date)
+        return (
+          aptDate.getFullYear() === date.getFullYear() &&
+          aptDate.getMonth() === date.getMonth() &&
+          aptDate.getDate() === date.getDate()
+        )
+      })
+      .sort((a, b) => a.time.localeCompare(b.time))
   }
 
   const getAppointmentsByDateRange = (startDate: Date, endDate: Date): Appointment[] => {
-    return appointments.filter(apt => {
-      const aptDate = new Date(apt.date)
-      return aptDate >= startDate && aptDate <= endDate
-    }).sort((a, b) => {
-      const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime()
-      if (dateCompare !== 0) return dateCompare
-      return a.time.localeCompare(b.time)
-    })
+    return appointments
+      .filter((apt) => {
+        const aptDate = new Date(apt.date)
+        return aptDate >= startDate && aptDate <= endDate
+      })
+      .sort((a, b) => {
+        const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime()
+        if (dateCompare !== 0) return dateCompare
+        return a.time.localeCompare(b.time)
+      })
   }
 
   const getAppointmentsByPatient = (patientId: string): Appointment[] => {
-    return appointments.filter(apt => apt.patientId === patientId)
+    return appointments
+      .filter((apt) => apt.patientId === patientId)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }
 
   const hasConflict = (date: Date, time: string, duration: number, excludeId?: string): boolean => {
-    const dayAppointments = getAppointmentsByDate(date).filter(apt => apt.id !== excludeId)
-    
+    const dayAppointments = getAppointmentsByDate(date).filter((apt) => apt.id !== excludeId)
+
     const parseTime = (timeStr: string) => {
-      const [hours, minutes] = timeStr.split(':').map(Number)
+      const [hours, minutes] = timeStr.split(":").map(Number)
       return hours * 60 + minutes
     }
 
     const newStart = parseTime(time)
     const newEnd = newStart + duration
 
-    return dayAppointments.some(apt => {
+    return dayAppointments.some((apt) => {
       const existingStart = parseTime(apt.time)
       const existingEnd = existingStart + apt.duration
 
@@ -253,16 +235,18 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AppointmentContext.Provider value={{
-      appointments,
-      addAppointment,
-      updateAppointment,
-      deleteAppointment,
-      getAppointmentsByDate,
-      getAppointmentsByDateRange,
-      getAppointmentsByPatient,
-      hasConflict
-    }}>
+    <AppointmentContext.Provider
+      value={{
+        appointments,
+        addAppointment,
+        updateAppointment,
+        deleteAppointment,
+        getAppointmentsByDate,
+        getAppointmentsByDateRange,
+        getAppointmentsByPatient,
+        hasConflict,
+      }}
+    >
       {children}
     </AppointmentContext.Provider>
   )

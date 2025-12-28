@@ -1,44 +1,50 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Calendar, Clock, AlertCircle, TrendingUp, Activity, Phone, Mail, ArrowRight, CheckCircle, XCircle, DollarSign, Zap, UserCheck } from "lucide-react"
+import {
+  Users,
+  Calendar,
+  Clock,
+  AlertCircle,
+  TrendingUp,
+  Activity,
+  Phone,
+  ArrowRight,
+  CheckCircle,
+  DollarSign,
+  Zap,
+  UserCheck,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MOCK_PATIENTS } from "@/lib/mock-patients"
+import { useAppointments } from "@/lib/appointment-context"
 import Link from "next/link"
 
 export default function DashboardPage() {
-  // Calculate real stats from MOCK_PATIENTS
+  const { getAppointmentsByDate, appointments: allAppointments } = useAppointments()
+
   const today = new Date()
   const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
   const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-  const weeklyVisits = MOCK_PATIENTS.filter(p =>
-    p.visitHistory.lastVisit >= oneWeekAgo
-  ).reduce((sum, p) => sum + p.visitHistory.totalVisits, 0)
+  const todayAppointments = getAppointmentsByDate(today)
 
-  const monthlyRevenue = MOCK_PATIENTS.filter(p =>
-    p.financial.lastPayment && p.financial.lastPayment >= oneMonthAgo
+  const weeklyVisits = MOCK_PATIENTS.filter((p) => p.visitHistory.lastVisit >= oneWeekAgo).reduce(
+    (sum, p) => sum + p.visitHistory.totalVisits,
+    0,
+  )
+
+  const monthlyRevenue = MOCK_PATIENTS.filter(
+    (p) => p.financial.lastPayment && p.financial.lastPayment >= oneMonthAgo,
   ).reduce((sum, p) => sum + p.financial.totalSpent, 0)
 
-  const unverifiedCount = MOCK_PATIENTS.filter(p => !p.contactVerifiedAt).length
-  const noShowsThisWeek = MOCK_PATIENTS.filter(p =>
-    p.visitHistory.noShows > 0
-  ).slice(0, 5)
-
-  // Today's appointments - simulated with upcoming patients
-  const todayAppointments = [
-    { id: "1", time: "08:30", patient: MOCK_PATIENTS[0], service: "Preventivka", status: "confirmed" },
-    { id: "2", time: "09:30", patient: MOCK_PATIENTS[1], service: "Kontrola", status: "confirmed" },
-    { id: "3", time: "11:00", patient: MOCK_PATIENTS[2], service: "Plomba", status: "pending" },
-    { id: "4", time: "14:00", patient: MOCK_PATIENTS[6], service: "Hygiena", status: "confirmed" },
-    { id: "5", time: "15:30", patient: MOCK_PATIENTS[8], service: "Bělení", status: "pending" },
-  ]
+  const unverifiedCount = MOCK_PATIENTS.filter((p) => !p.contactVerifiedAt).length
 
   // Waitlist - patients without upcoming appointments
-  const waitlistPatients = MOCK_PATIENTS
-    .filter(p => p.visitHistory.upcomingAppointments === 0 && p.tags?.includes("Pravidelný"))
-    .slice(0, 3)
+  const waitlistPatients = MOCK_PATIENTS.filter(
+    (p) => p.visitHistory.upcomingAppointments === 0 && p.tags?.includes("Pravidelný"),
+  ).slice(0, 3)
 
   // Top procedures this month
   const topProcedures = [
@@ -51,22 +57,34 @@ export default function DashboardPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
-        return <Badge className="bg-green-100 text-green-800 text-xs"><CheckCircle className="w-3 h-3 mr-1" />Potvrzeno</Badge>
+        return (
+          <Badge className="bg-green-100 text-green-800 text-xs">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Potvrzeno
+          </Badge>
+        )
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs"><Clock className="w-3 h-3 mr-1" />Čeká</Badge>
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 text-xs">
+            <Clock className="w-3 h-3 mr-1" />
+            Čeká
+          </Badge>
+        )
       default:
         return <Badge className="bg-gray-100 text-gray-800 text-xs">{status}</Badge>
     }
   }
 
-  const urgentActions = 3 + unverifiedCount
+  const pendingCount = todayAppointments.filter((a) => a.status === "pending").length
+  const confirmedCount = todayAppointments.filter((a) => a.status === "confirmed").length
+  const urgentActions = pendingCount + unverifiedCount
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Centrální přehled ordinace</p>
+        <h1 className="text-3xl font-bold text-gray-900">Přehled</h1>
+        <p className="text-gray-600 mt-1">Co mě dnes čeká</p>
       </div>
 
       {/* Top KPI Cards - 4 columns */}
@@ -74,16 +92,16 @@ export default function DashboardPage() {
         <Link href="/admin/calendar" className="block">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-blue-500">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Dnes pacientů</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Dnes termínů</CardTitle>
               <Users className="w-5 h-5 text-blue-600" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-gray-900">{todayAppointments.length}</div>
               <p className="text-xs text-gray-500 mt-1">
-                {todayAppointments.filter(a => a.status === "confirmed").length} potvrzeno • {todayAppointments.filter(a => a.status === "pending").length} čeká
+                {confirmedCount} potvrzeno • {pendingCount} čeká
               </p>
               <div className="flex items-center text-xs text-blue-600 mt-2">
-                Zobrazit kalendář <ArrowRight className="w-3 h-3 ml-1" />
+                Otevřít diář <ArrowRight className="w-3 h-3 ml-1" />
               </div>
             </CardContent>
           </Card>
@@ -115,9 +133,7 @@ export default function DashboardPage() {
               <DollarSign className="w-5 h-5 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">
-                {Math.round(monthlyRevenue / 1000)}k Kč
-              </div>
+              <div className="text-3xl font-bold text-gray-900">{Math.round(monthlyRevenue / 1000)}k Kč</div>
               <p className="text-xs text-purple-600 mt-1 flex items-center">
                 <TrendingUp className="w-3 h-3 mr-1" />
                 Průměr {Math.round(monthlyRevenue / 30)} Kč/den
@@ -132,16 +148,16 @@ export default function DashboardPage() {
         <Link href="/admin/patients" className="block">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-red-500">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Urgentní akce</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Vyžaduje pozornost</CardTitle>
               <Zap className="w-5 h-5 text-red-600" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-600">{urgentActions}</div>
               <p className="text-xs text-gray-500 mt-1">
-                {unverifiedCount} neověřených • 3 čekající
+                {pendingCount} nepotvrzeno • {unverifiedCount} neověřeno
               </p>
               <div className="flex items-center text-xs text-red-600 mt-2">
-                Zobrazit úkoly <ArrowRight className="w-3 h-3 ml-1" />
+                Zobrazit <ArrowRight className="w-3 h-3 ml-1" />
               </div>
             </CardContent>
           </Card>
@@ -155,20 +171,20 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold">Dnešní rozvrh</CardTitle>
+                <CardTitle className="text-base font-semibold">Dnes v diáři</CardTitle>
                 <Link href="/admin/calendar">
                   <Button variant="ghost" size="sm" className="text-xs">
-                    Celý kalendář <ArrowRight className="w-3 h-3 ml-1" />
+                    Celý diář <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
                 </Link>
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              {todayAppointments.slice(0, 5).map((appointment) => (
+              {todayAppointments.slice(0, 6).map((appointment) => (
                 <div
                   key={appointment.id}
                   className="block p-3 border rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer"
-                  onClick={() => window.location.href = `/admin/patients?id=${appointment.patient.id}`}
+                  onClick={() => (window.location.href = `/admin/calendar`)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -176,28 +192,17 @@ export default function DashboardPage() {
                         <span className="font-semibold text-blue-600 text-sm">{appointment.time}</span>
                         {getStatusBadge(appointment.status)}
                       </div>
-                      <div className="font-medium text-gray-900 text-sm">
-                        {appointment.patient.personalInfo.firstName} {appointment.patient.personalInfo.lastName}
-                      </div>
+                      <div className="font-medium text-gray-900 text-sm">{appointment.patientName}</div>
                       <div className="text-xs text-gray-600">{appointment.service}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <a
-                          href={`tel:${appointment.patient.personalInfo.phone}`}
-                          className="text-xs text-gray-500 hover:text-blue-600 flex items-center"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Phone className="w-3 h-3 mr-1" />
-                          {appointment.patient.personalInfo.phone}
-                        </a>
-                      </div>
+                      {appointment.notes && (
+                        <div className="text-xs text-gray-500 mt-1 italic truncate">{appointment.notes}</div>
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
               {todayAppointments.length === 0 && (
-                <div className="text-center py-8 text-gray-500 text-sm">
-                  Žádné termíny na dnes
-                </div>
+                <div className="text-center py-8 text-gray-500 text-sm">Žádné termíny na dnes</div>
               )}
             </CardContent>
           </Card>
@@ -269,15 +274,13 @@ export default function DashboardPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base font-semibold">Čekatelé</CardTitle>
-                  <Badge className="bg-orange-100 text-orange-800">
-                    {waitlistPatients.length} čeká
-                  </Badge>
+                  <Badge className="bg-orange-100 text-orange-800">{waitlistPatients.length} čeká</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 {waitlistPatients.map((patient) => {
                   const waitingDays = Math.floor(
-                    (today.getTime() - patient.visitHistory.lastVisit.getTime()) / (1000 * 60 * 60 * 24)
+                    (today.getTime() - patient.visitHistory.lastVisit.getTime()) / (1000 * 60 * 60 * 24),
                   )
                   return (
                     <div
@@ -287,9 +290,7 @@ export default function DashboardPage() {
                       <div className="font-medium text-sm text-gray-900">
                         {patient.personalInfo.firstName} {patient.personalInfo.lastName}
                       </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Poslední návštěva: {waitingDays} dní
-                      </div>
+                      <div className="text-xs text-gray-600 mt-1">Poslední návštěva: {waitingDays} dní</div>
                       <div className="flex items-center gap-1 mt-1">
                         <Phone className="w-3 h-3 text-gray-400" />
                         <span className="text-xs text-gray-500">{patient.personalInfo.phone}</span>
@@ -312,15 +313,11 @@ export default function DashboardPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base font-semibold">Neověřené kontakty</CardTitle>
-                  <Badge className="bg-red-100 text-red-800">
-                    {unverifiedCount}
-                  </Badge>
+                  <Badge className="bg-red-100 text-red-800">{unverifiedCount}</Badge>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-gray-600 mb-3">
-                  {unverifiedCount} pacientů nemá ověřený kontakt
-                </div>
+                <div className="text-sm text-gray-600 mb-3">{unverifiedCount} pacientů nemá ověřený kontakt</div>
                 <div className="flex items-center text-xs text-red-600">
                   <UserCheck className="w-4 h-4 mr-1" />
                   Ověřit kontakty <ArrowRight className="w-3 h-3 ml-1" />
@@ -335,21 +332,21 @@ export default function DashboardPage() {
               <CardTitle className="text-base font-semibold">No-shows (7 dní)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {noShowsThisWeek.slice(0, 3).map((patient) => (
-                <Link
-                  key={patient.id}
-                  href={`/admin/patients?id=${patient.id}`}
-                  className="block p-2 border rounded hover:bg-yellow-50 hover:border-yellow-300 transition-all"
-                >
-                  <div className="font-medium text-sm text-gray-900">
-                    {patient.personalInfo.firstName} {patient.personalInfo.lastName}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {patient.visitHistory.noShows} nedostavení
-                  </div>
-                </Link>
-              ))}
-              {noShowsThisWeek.length === 0 && (
+              {MOCK_PATIENTS.filter((p) => p.visitHistory.noShows > 0)
+                .slice(0, 3)
+                .map((patient) => (
+                  <Link
+                    key={patient.id}
+                    href={`/admin/patients?id=${patient.id}`}
+                    className="block p-2 border rounded hover:bg-yellow-50 hover:border-yellow-300 transition-all"
+                  >
+                    <div className="font-medium text-sm text-gray-900">
+                      {patient.personalInfo.firstName} {patient.personalInfo.lastName}
+                    </div>
+                    <div className="text-xs text-gray-600">{patient.visitHistory.noShows} nedostavení</div>
+                  </Link>
+                ))}
+              {MOCK_PATIENTS.filter((p) => p.visitHistory.noShows > 0).length === 0 && (
                 <div className="text-center py-4 text-sm text-green-600">
                   <CheckCircle className="w-5 h-5 mx-auto mb-1" />
                   Žádné no-shows tento týden!
@@ -368,37 +365,37 @@ export default function DashboardPage() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             <Link href="/admin/calendar">
-              <Button variant="outline" className="w-full justify-start" size="sm">
+              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
                 <Calendar className="w-4 h-4 mr-2" />
                 Kalendář
               </Button>
             </Link>
             <Link href="/admin/patients">
-              <Button variant="outline" className="w-full justify-start" size="sm">
+              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
                 <Users className="w-4 h-4 mr-2" />
                 Pacienti
               </Button>
             </Link>
             <Link href="/admin/waitlist">
-              <Button variant="outline" className="w-full justify-start" size="sm">
+              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
                 <Clock className="w-4 h-4 mr-2" />
                 Čekatelé
               </Button>
             </Link>
             <Link href="/admin/stats">
-              <Button variant="outline" className="w-full justify-start" size="sm">
+              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
                 <Activity className="w-4 h-4 mr-2" />
                 Statistiky
               </Button>
             </Link>
             <Link href="/admin/settings">
-              <Button variant="outline" className="w-full justify-start" size="sm">
+              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
                 <AlertCircle className="w-4 h-4 mr-2" />
                 Nastavení
               </Button>
             </Link>
             <Link href="/admin/users">
-              <Button variant="outline" className="w-full justify-start" size="sm">
+              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
                 <UserCheck className="w-4 h-4 mr-2" />
                 Uživatelé
               </Button>

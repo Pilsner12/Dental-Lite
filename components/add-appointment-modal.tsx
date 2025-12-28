@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAppointments, AppointmentStatus } from "@/lib/appointment-context"
-import { MOCK_PATIENTS, Patient } from "@/lib/mock-patients"
+import { useAppointments, type AppointmentStatus } from "@/lib/appointment-context"
+import { MOCK_PATIENTS, type Patient } from "@/lib/mock-patients"
 import { X, Search, User, UserPlus, Zap } from "lucide-react"
 
 interface AddAppointmentModalProps {
@@ -29,7 +29,8 @@ const SERVICES = [
   "Bělení zubů",
   "Dentální hygiena",
   "Ortodoncie",
-  "Ošetření kořenových kanálků"
+  "Ošetření kořenových kanálků",
+  "Neordinuje se (blokace)",
 ]
 
 const DURATIONS = [
@@ -37,31 +38,31 @@ const DURATIONS = [
   { value: 45, label: "45 minut" },
   { value: 60, label: "1 hodina" },
   { value: 90, label: "1.5 hodiny" },
-  { value: 120, label: "2 hodiny" }
+  { value: 120, label: "2 hodiny" },
 ]
 
 export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTime }: AddAppointmentModalProps) {
   const { addAppointment, hasConflict } = useAppointments()
-  
+
   // State for existing patient tab
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
-  
+
   // State for new patient tab
   const [newPatientData, setNewPatientData] = useState({
     firstName: "",
     lastName: "",
     phone: "",
     email: "",
-    dateOfBirth: ""
+    dateOfBirth: "",
   })
-  
+
   // State for quick booking tab
   const [quickBookingData, setQuickBookingData] = useState({
     name: "",
-    phone: ""
+    phone: "",
   })
-  
+
   // Common appointment data
   const [appointmentData, setAppointmentData] = useState({
     date: prefilledDate || new Date(),
@@ -69,7 +70,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
     duration: 30,
     service: "Kontrola",
     status: "pending" as AppointmentStatus,
-    notes: ""
+    notes: "",
   })
 
   const [error, setError] = useState("")
@@ -77,14 +78,14 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
 
   useEffect(() => {
     if (prefilledDate) {
-      setAppointmentData(prev => ({ ...prev, date: prefilledDate }))
+      setAppointmentData((prev) => ({ ...prev, date: prefilledDate }))
     }
     if (prefilledTime) {
-      setAppointmentData(prev => ({ ...prev, time: prefilledTime }))
+      setAppointmentData((prev) => ({ ...prev, time: prefilledTime }))
     }
   }, [prefilledDate, prefilledTime])
 
-  const filteredPatients = MOCK_PATIENTS.filter(patient => {
+  const filteredPatients = MOCK_PATIENTS.filter((patient) => {
     const searchLower = searchQuery.toLowerCase()
     const fullName = `${patient.personalInfo.firstName} ${patient.personalInfo.lastName}`.toLowerCase()
     return fullName.includes(searchLower) || patient.personalInfo.phone.includes(searchQuery)
@@ -136,7 +137,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
       duration: appointmentData.duration,
       service: appointmentData.service,
       status: appointmentData.status,
-      notes: appointmentData.notes
+      notes: appointmentData.notes,
     })
 
     // Reset and close
@@ -152,11 +153,11 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
       lastName: "",
       phone: "",
       email: "",
-      dateOfBirth: ""
+      dateOfBirth: "",
     })
     setQuickBookingData({
       name: "",
-      phone: ""
+      phone: "",
     })
     setAppointmentData({
       date: new Date(),
@@ -164,17 +165,17 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
       duration: 30,
       service: "Kontrola",
       status: "pending",
-      notes: ""
+      notes: "",
     })
     setError("")
   }
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('cs-CZ', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString("cs-CZ", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     })
   }
 
@@ -223,11 +224,9 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
               {searchQuery && (
                 <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
                   {filteredPatients.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
-                      Žádný pacient nenalezen
-                    </div>
+                    <div className="p-4 text-center text-gray-500">Žádný pacient nenalezen</div>
                   ) : (
-                    filteredPatients.map(patient => (
+                    filteredPatients.map((patient) => (
                       <button
                         key={patient.id}
                         onClick={() => {
@@ -242,6 +241,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                         <div className="text-sm text-gray-600">
                           {patient.personalInfo.phone} • {patient.personalInfo.email}
                         </div>
+                        <div className="text-xs text-gray-500 mt-1">Věk: {patient.personalInfo.age} let</div>
                       </button>
                     ))
                   )}
@@ -258,15 +258,9 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                       <div className="text-sm text-gray-600">
                         {selectedPatient.personalInfo.phone} • {selectedPatient.personalInfo.email}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Věk: {selectedPatient.personalInfo.age} let
-                      </div>
+                      <div className="text-xs text-gray-500 mt-1">Věk: {selectedPatient.personalInfo.age} let</div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedPatient(null)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedPatient(null)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -281,7 +275,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                   <Input
                     id="firstName"
                     value={newPatientData.firstName}
-                    onChange={(e) => setNewPatientData(prev => ({ ...prev, firstName: e.target.value }))}
+                    onChange={(e) => setNewPatientData((prev) => ({ ...prev, firstName: e.target.value }))}
                   />
                 </div>
                 <div>
@@ -289,7 +283,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                   <Input
                     id="lastName"
                     value={newPatientData.lastName}
-                    onChange={(e) => setNewPatientData(prev => ({ ...prev, lastName: e.target.value }))}
+                    onChange={(e) => setNewPatientData((prev) => ({ ...prev, lastName: e.target.value }))}
                   />
                 </div>
               </div>
@@ -301,7 +295,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                     id="phone"
                     type="tel"
                     value={newPatientData.phone}
-                    onChange={(e) => setNewPatientData(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) => setNewPatientData((prev) => ({ ...prev, phone: e.target.value }))}
                   />
                 </div>
                 <div>
@@ -310,7 +304,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                     id="email"
                     type="email"
                     value={newPatientData.email}
-                    onChange={(e) => setNewPatientData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) => setNewPatientData((prev) => ({ ...prev, email: e.target.value }))}
                   />
                 </div>
               </div>
@@ -321,7 +315,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                   id="dateOfBirth"
                   type="date"
                   value={newPatientData.dateOfBirth}
-                  onChange={(e) => setNewPatientData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                  onChange={(e) => setNewPatientData((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
                 />
               </div>
             </TabsContent>
@@ -333,7 +327,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                   id="quickName"
                   placeholder="Jan Novák"
                   value={quickBookingData.name}
-                  onChange={(e) => setQuickBookingData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => setQuickBookingData((prev) => ({ ...prev, name: e.target.value }))}
                 />
               </div>
               <div>
@@ -343,7 +337,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                   type="tel"
                   placeholder="+420 123 456 789"
                   value={quickBookingData.phone}
-                  onChange={(e) => setQuickBookingData(prev => ({ ...prev, phone: e.target.value }))}
+                  onChange={(e) => setQuickBookingData((prev) => ({ ...prev, phone: e.target.value }))}
                 />
               </div>
               <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded border border-yellow-200">
@@ -362,11 +356,13 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                 <Input
                   id="date"
                   type="date"
-                  value={appointmentData.date.toISOString().split('T')[0]}
-                  onChange={(e) => setAppointmentData(prev => ({ 
-                    ...prev, 
-                    date: new Date(e.target.value) 
-                  }))}
+                  value={appointmentData.date.toISOString().split("T")[0]}
+                  onChange={(e) =>
+                    setAppointmentData((prev) => ({
+                      ...prev,
+                      date: new Date(e.target.value),
+                    }))
+                  }
                 />
               </div>
               <div>
@@ -375,7 +371,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                   id="time"
                   type="time"
                   value={appointmentData.time}
-                  onChange={(e) => setAppointmentData(prev => ({ ...prev, time: e.target.value }))}
+                  onChange={(e) => setAppointmentData((prev) => ({ ...prev, time: e.target.value }))}
                 />
               </div>
             </div>
@@ -385,13 +381,13 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                 <Label htmlFor="service">Typ ošetření</Label>
                 <Select
                   value={appointmentData.service}
-                  onValueChange={(value) => setAppointmentData(prev => ({ ...prev, service: value }))}
+                  onValueChange={(value) => setAppointmentData((prev) => ({ ...prev, service: value }))}
                 >
                   <SelectTrigger id="service">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SERVICES.map(service => (
+                    {SERVICES.map((service) => (
                       <SelectItem key={service} value={service}>
                         {service}
                       </SelectItem>
@@ -403,13 +399,15 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                 <Label htmlFor="duration">Délka</Label>
                 <Select
                   value={appointmentData.duration.toString()}
-                  onValueChange={(value) => setAppointmentData(prev => ({ ...prev, duration: parseInt(value) }))}
+                  onValueChange={(value) =>
+                    setAppointmentData((prev) => ({ ...prev, duration: Number.parseInt(value) }))
+                  }
                 >
                   <SelectTrigger id="duration">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {DURATIONS.map(dur => (
+                    {DURATIONS.map((dur) => (
                       <SelectItem key={dur.value} value={dur.value.toString()}>
                         {dur.label}
                       </SelectItem>
@@ -423,7 +421,9 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
               <Label htmlFor="status">Status</Label>
               <Select
                 value={appointmentData.status}
-                onValueChange={(value) => setAppointmentData(prev => ({ ...prev, status: value as AppointmentStatus }))}
+                onValueChange={(value) =>
+                  setAppointmentData((prev) => ({ ...prev, status: value as AppointmentStatus }))
+                }
               >
                 <SelectTrigger id="status">
                   <SelectValue />
@@ -433,6 +433,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                   <SelectItem value="confirmed">Potvrzeno</SelectItem>
                   <SelectItem value="completed">Dokončeno</SelectItem>
                   <SelectItem value="cancelled">Zrušeno</SelectItem>
+                  <SelectItem value="blocked">Neordinuje se (blokace)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -443,25 +444,19 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                 id="notes"
                 placeholder="Volitelné poznámky k termínu..."
                 value={appointmentData.notes}
-                onChange={(e) => setAppointmentData(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) => setAppointmentData((prev) => ({ ...prev, notes: e.target.value }))}
                 rows={3}
               />
             </div>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
+          {error && <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">{error}</div>}
 
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button variant="outline" onClick={onClose}>
               Zrušit
             </Button>
-            <Button onClick={handleSubmit}>
-              Přidat termín
-            </Button>
+            <Button onClick={handleSubmit}>Přidat termín</Button>
           </div>
         </div>
       </DialogContent>

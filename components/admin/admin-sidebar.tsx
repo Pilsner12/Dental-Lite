@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { useTier } from "@/lib/tier-context"
 
 const navigation = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, feature: "admin_dashboard" },
-  { name: "Kalendář", href: "/admin/calendar", icon: Calendar, feature: "calendar" },
+  { name: "Přehled", href: "/admin/dashboard", icon: LayoutDashboard, feature: "admin_dashboard" },
+  { name: "Diář", href: "/admin/calendar", icon: Calendar, feature: "calendar" },
   { name: "Pacienti", href: "/admin/patients", icon: Users, feature: "patients" },
   { name: "Čekatelé", href: "/admin/waitlist", icon: Clock, feature: "waitlist" },
   { name: "Uživatelé", href: "/admin/users", icon: UserCog, feature: "users" },
@@ -45,8 +45,8 @@ export function AdminSidebar() {
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-gray-200">
             <Link href="/admin/calendar">
-              <h1 className="text-2xl font-bold text-blue-600">Admin</h1>
-              <p className="text-sm text-gray-600 mt-1">Zubní ordinace</p>
+              <h1 className="text-2xl font-bold text-blue-600">Zubní ordinace</h1>
+              <p className="text-sm text-gray-600 mt-1">Digitální diář</p>
             </Link>
           </div>
           <nav className="flex-1 p-4 space-y-2">
@@ -54,7 +54,7 @@ export function AdminSidebar() {
               const Icon = item.icon
               const isActive = pathname === item.href
               const locked = isFeatureLocked(item.feature)
-              
+
               return (
                 <Link
                   key={item.name}
@@ -97,10 +97,7 @@ export function AdminSidebar() {
 
       {/* Overlay for mobile */}
       {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
       )}
 
       {/* Spacer for mobile header */}

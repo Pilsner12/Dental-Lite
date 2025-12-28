@@ -10,10 +10,12 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Settings } from "lucide-react"
 import { AnnouncementBanner } from "@/components/announcement-banner"
+import { DemoOnboarding } from "@/components/demo-onboarding"
 
 export default function V2Page() {
   return (
     <div className="min-h-screen">
+      <DemoOnboarding />
       <AnnouncementBanner />
       <VersionBadge version="BUSINESS" />
       <Header>

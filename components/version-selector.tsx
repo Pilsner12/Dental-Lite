@@ -13,53 +13,52 @@ export function VersionSelector() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Vítejte v DEMO aplikaci - Zubní ordinace
+            Vítejte v DEMO aplikaci – Zubní ordinace
           </h1>
-          <p className="text-xl text-slate-600">Prozkoumejte různé balíčky našeho řešení</p>
+          <p className="text-2xl text-slate-700 mb-2 font-medium">Papírový diář, jen klidnější.</p>
+          <p className="text-lg text-slate-600">Digitální řešení pro malé zubní ordinace</p>
         </div>
 
         {/* Version Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {/* V1 - Basic */}
           <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-slate-200 hover:border-blue-400 transition-all">
-            <div className="text-4xl mb-4">📄</div>
+            <div className="text-4xl mb-4">🌐</div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Základní</h2>
-            <p className="text-slate-600 mb-6">Statický web ordinace</p>
+            <p className="text-slate-600 mb-2">Online vizitka ordinace</p>
+            <p className="text-sm text-slate-500 mb-6 italic">Vhodné pro ordinace, které chtějí být vidět online.</p>
 
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Moderní webová prezentace</span>
+                <span className="text-sm">Profesionální webová prezentace</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                <span className="text-sm">Jasné informace pro pacienty</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                <span className="text-sm">Ordinační hodiny a ceník</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                 <span className="text-sm">Kontaktní formulář</span>
               </li>
-              <li className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Ordinační hodiny</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Mapa a kontakty</span>
-              </li>
             </ul>
 
-            <div className="mb-6">
-              <div className="text-sm text-slate-600">Setup 9 900 Kč</div>
-              <div className="text-sm text-slate-600">Měsíčně 290 Kč</div>
-            </div>
-
             <Link href="/v1">
-              <Button className="w-full">Zobrazit demo V1</Button>
+              <Button className="w-full">Podívat se, jak to funguje</Button>
             </Link>
           </div>
 
           {/* V2 - Business */}
-          <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-slate-200 hover:border-blue-400 transition-all">
-            <div className="text-4xl mb-4">💼</div>
+          <div className="bg-white rounded-lg shadow-xl p-8 border-2 border-blue-500 hover:border-blue-600 transition-all relative">
+            <Badge className="absolute top-4 right-4 bg-blue-600">DOPORUČENO</Badge>
+            <div className="text-4xl mb-4">📅</div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Business</h2>
-            <p className="text-slate-600 mb-6">Web + Admin systém</p>
+            <p className="text-slate-600 mb-2">Digitální diář pro sestru</p>
+            <p className="text-sm text-slate-500 mb-6 italic">Nejčastější volba pro malé ordinace.</p>
 
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-2">
@@ -68,38 +67,33 @@ export function VersionSelector() {
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Admin kalendář</span>
+                <span className="text-sm">Přehledný diář pro sestru</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Evidence pacientů</span>
+                <span className="text-sm">Jednoduchý přehled pacientů</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">SMS připomínky</span>
+                <span className="text-sm">Úprava ordinačních hodin a ceníku</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Editace obsahu</span>
+                <span className="text-sm">SMS připomenutí termínů</span>
               </li>
             </ul>
 
-            <div className="mb-6">
-              <div className="text-sm text-slate-600">Setup 29 900 Kč</div>
-              <div className="text-sm text-slate-600">Měsíčně 1 490 Kč</div>
-            </div>
-
             <Link href="/v2">
-              <Button className="w-full">Zobrazit demo V2</Button>
+              <Button className="w-full shadow-lg shadow-blue-500/50">Ukázat diář v praxi</Button>
             </Link>
           </div>
 
           {/* V3 - Pro */}
-          <div className="bg-white rounded-lg shadow-xl p-8 border-2 border-blue-500 hover:border-blue-600 transition-all relative">
-            <Badge className="absolute top-4 right-4 bg-blue-600">DOPORUČENO</Badge>
+          <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-slate-200 hover:border-blue-400 transition-all">
             <div className="text-4xl mb-4">🚀</div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Profi</h2>
-            <p className="text-slate-600 mb-6">Kompletní řešení</p>
+            <p className="text-slate-600 mb-2">Vše + online objednávání</p>
+            <p className="text-sm text-slate-500 mb-6 italic">Pro ordinace, které chtějí jít o krok dál.</p>
 
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-2">
@@ -108,29 +102,24 @@ export function VersionSelector() {
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Online objednávání</span>
+                <span className="text-sm">Objednání pacientů s vaším schválením</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Automatizace</span>
+                <span className="text-sm">Připomenutí preventivních prohlídek</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Pokročilé statistiky</span>
+                <span className="text-sm">Základní přehled vytíženosti</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm">Integrace a export</span>
+                <span className="text-sm">Možnost exportu dat</span>
               </li>
             </ul>
 
-            <div className="mb-6">
-              <div className="text-sm text-slate-600">Setup 49 900 Kč</div>
-              <div className="text-sm text-slate-600">Měsíčně 2 490 Kč</div>
-            </div>
-
             <Link href="/v3">
-              <Button className="w-full shadow-lg shadow-blue-500/50">Zobrazit demo V3</Button>
+              <Button className="w-full">Vyzkoušet pohledem sestry</Button>
             </Link>
           </div>
         </div>
@@ -189,8 +178,8 @@ function ComparisonModal() {
                 { name: "Admin přístup", v1: false, v2: true, v3: true },
                 { name: "Kalendář termínů", v1: false, v2: true, v3: true },
                 { name: "Evidence pacientů", v1: false, v2: true, v3: true },
-                { name: "SMS připomínky", v1: false, v2: true, v3: true },
-                { name: "Editace ceníku/hodin", v1: false, v2: true, v3: true },
+                { name: "SMS připomenutí termínů", v1: false, v2: true, v3: true },
+                { name: "Úprava ceníku/hodin", v1: false, v2: true, v3: true },
                 { name: "Online objednávání", v1: false, v2: false, v3: true },
                 { name: "Schvalování rezervací", v1: false, v2: false, v3: true },
                 { name: "Marketing automatizace", v1: false, v2: false, v3: true },
