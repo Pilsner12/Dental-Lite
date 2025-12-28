@@ -4,142 +4,253 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Eye, Edit, Plus } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Search, Eye, Edit, Plus, Phone, Mail, User, Heart, Calendar, CreditCard, Tag, CheckCircle2, Send, AlertCircle, MessageSquare, Activity, Save, X, Trash2, Check } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-
-interface Patient {
-  id: string
-  name: string
-  age: number
-  phone: string
-  email: string
-  lastVisit: string
-  visitHistory?: { date: string; service: string; notes: string }[]
-  notes?: string
-}
-
-const patientsData: Patient[] = [
-  {
-    id: "1",
-    name: "Jana Svobodová, 35",
-    age: 35,
-    phone: "731 234 567",
-    email: "jana@email.cz",
-    lastVisit: "23.12.2024",
-    visitHistory: [
-      { date: "23.12.2024", service: "Preventivka", notes: "Vše v pořádku" },
-      { date: "15.06.2024", service: "Hygiena", notes: "Odstranění zubního kamene" },
-      { date: "10.01.2024", service: "Kontrola", notes: "Pravidelná kontrola" },
-    ],
-    notes: "Pravidelná pacientka, bez problémů",
-  },
-  {
-    id: "2",
-    name: "Petr Novák, 42",
-    age: 42,
-    phone: "602 345 678",
-    email: "petr@email.cz",
-    lastVisit: "20.12.2024",
-    visitHistory: [
-      { date: "20.12.2024", service: "Plomba", notes: "Výplň horního zubu" },
-      { date: "05.11.2024", service: "Preventivka", notes: "" },
-    ],
-    notes: "Občas zubní kámen",
-  },
-  {
-    id: "3",
-    name: "Eva Dvořáková, 28",
-    age: 28,
-    phone: "775 456 789",
-    email: "eva@email.cz",
-    lastVisit: "18.12.2024",
-    visitHistory: [
-      { date: "18.12.2024", service: "Kámen", notes: "Odstranění kamene" },
-      { date: "22.08.2024", service: "Bělení", notes: "První fáze bělení" },
-    ],
-  },
-  {
-    id: "4",
-    name: "Martin Černý, 51",
-    age: 51,
-    phone: "608 567 890",
-    email: "martin@email.cz",
-    lastVisit: "15.12.2024",
-    visitHistory: [{ date: "15.12.2024", service: "Kontrola", notes: "Pravidelná kontrola" }],
-  },
-  {
-    id: "5",
-    name: "Lucie Procházková, 39",
-    age: 39,
-    phone: "732 678 901",
-    email: "lucie@email.cz",
-    lastVisit: "12.12.2024",
-    visitHistory: [{ date: "12.12.2024", service: "Bělení", notes: "Druhá fáze" }],
-  },
-  {
-    id: "6",
-    name: "Tomáš Veselý, 33",
-    age: 33,
-    phone: "775 012 345",
-    email: "tomas@email.cz",
-    lastVisit: "10.12.2024",
-    visitHistory: [{ date: "10.12.2024", service: "Preventivka", notes: "" }],
-  },
-  {
-    id: "7",
-    name: "Barbora Horáková, 29",
-    age: 29,
-    phone: "603 123 456",
-    email: "barbora@email.cz",
-    lastVisit: "08.12.2024",
-    visitHistory: [{ date: "08.12.2024", service: "Plomba", notes: "Dolní levá šestka" }],
-  },
-  {
-    id: "8",
-    name: "Jakub Kučera, 45",
-    age: 45,
-    phone: "731 234 567",
-    email: "jakub@email.cz",
-    lastVisit: "05.12.2024",
-    visitHistory: [{ date: "05.12.2024", service: "Extrakce", notes: "Konzultace" }],
-  },
-  {
-    id: "9",
-    name: "Tereza Němcová, 37",
-    age: 37,
-    phone: "602 345 678",
-    email: "tereza@email.cz",
-    lastVisit: "03.12.2024",
-    visitHistory: [{ date: "03.12.2024", service: "Hygiena", notes: "Čištění" }],
-  },
-  {
-    id: "10",
-    name: "David Šmíd, 52",
-    age: 52,
-    phone: "775 456 789",
-    email: "david@email.cz",
-    lastVisit: "01.12.2024",
-    visitHistory: [{ date: "01.12.2024", service: "Kontrola", notes: "Pravidelná kontrola" }],
-  },
-]
+import { MOCK_PATIENTS, type Patient } from "@/lib/mock-patients"
 
 export default function PatientsPage() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [patients, setPatients] = useState<Patient[]>(MOCK_PATIENTS)
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
+  const [editedPatient, setEditedPatient] = useState<Patient | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [tagFilter, setTagFilter] = useState("all")
+  const [sortBy, setSortBy] = useState("name")
 
-  const filteredPatients = patientsData.filter(
-    (patient) =>
-      patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.phone.includes(searchQuery) ||
-      patient.email.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("cs-CZ", {
+      style: "currency",
+      currency: "CZK",
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString("cs-CZ", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    })
+  }
+
+  const formatRelativeTime = (date: Date) => {
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) return "Dnes"
+    if (diffDays === 1) return "Včera"
+    if (diffDays < 7) return `Před ${diffDays} dny`
+    if (diffDays < 30) return `Před ${Math.floor(diffDays / 7)} týdny`
+    if (diffDays < 365) return `Před ${Math.floor(diffDays / 30)} měsíci`
+    return `Před ${Math.floor(diffDays / 365)} lety`
+  }
+
+  const getTagColor = (tag: string) => {
+    const colors: Record<string, string> = {
+      VIP: "bg-purple-100 text-purple-800",
+      "Pravidelný": "bg-green-100 text-green-800",
+      "Nový": "bg-blue-100 text-blue-800",
+      "Rizikový": "bg-red-100 text-red-800",
+    }
+    return colors[tag] || "bg-gray-100 text-gray-800"
+  }
+
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      active: "bg-green-100 text-green-800",
+      inactive: "bg-gray-100 text-gray-800",
+      archived: "bg-red-100 text-red-800",
+    }
+    const labels: Record<string, string> = {
+      active: "Aktivní",
+      inactive: "Neaktivní",
+      archived: "Archivován",
+    }
+    return <Badge className={styles[status]}>{labels[status]}</Badge>
+  }
+
+  const getVerificationStatus = (patient: Patient): "recent" | "warning" | "expired" | "never" => {
+    if (!patient.contactVerifiedAt) return "never"
+
+    const now = new Date()
+    const verified = new Date(patient.contactVerifiedAt)
+    const diffMonths = (now.getTime() - verified.getTime()) / (1000 * 60 * 60 * 24 * 30)
+
+    if (diffMonths < 6) return "recent"
+    if (diffMonths < 12) return "warning"
+    return "expired"
+  }
+
+  const getVerificationBadge = (patient: Patient) => {
+    const status = getVerificationStatus(patient)
+
+    const styles: Record<string, string> = {
+      recent: "bg-green-100 text-green-800",
+      warning: "bg-yellow-100 text-yellow-800",
+      expired: "bg-red-100 text-red-800",
+      never: "bg-gray-100 text-gray-800"
+    }
+
+    const labels: Record<string, string> = {
+      recent: "Ověřeno",
+      warning: "K ověření",
+      expired: "Neplatné",
+      never: "Neověřeno"
+    }
+
+    return <Badge className={`${styles[status]} text-xs`}>{labels[status]}</Badge>
+  }
+
+  const handleVerifyContact = (patient: Patient) => {
+    console.log("Manually verifying contact for patient:", patient.id)
+    alert(`Kontakt pro ${patient.personalInfo.firstName} ${patient.personalInfo.lastName} byl ověřen`)
+  }
+
+  const handleSendVerificationLink = (patient: Patient) => {
+    const token = `verify-${patient.id}-${Date.now()}`
+    const link = `${window.location.origin}/verify/${token}`
+    console.log("Generated verification link:", link)
+    alert(`Odkaz pro ověření byl odeslán na ${patient.personalInfo.email}`)
+  }
+
+  // Edit mode functions
+  const handleStartEdit = () => {
+    if (selectedPatient) {
+      setEditedPatient(JSON.parse(JSON.stringify(selectedPatient)))
+      setIsEditMode(true)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditedPatient(null)
+    setIsEditMode(false)
+  }
+
+  const handleSaveEdit = () => {
+    if (editedPatient) {
+      setPatients(prev => prev.map(p => p.id === editedPatient.id ? editedPatient : p))
+      setSelectedPatient(editedPatient)
+      setEditedPatient(null)
+      setIsEditMode(false)
+      alert("Změny byly uloženy")
+    }
+  }
+
+  const updateEditedField = (path: string, value: any) => {
+    if (!editedPatient) return
+
+    const pathParts = path.split('.')
+    const newPatient = JSON.parse(JSON.stringify(editedPatient))
+
+    let current: any = newPatient
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      current = current[pathParts[i]]
+    }
+    current[pathParts[pathParts.length - 1]] = value
+
+    setEditedPatient(newPatient)
+  }
+
+  const addArrayItem = (path: string, item: any) => {
+    if (!editedPatient) return
+
+    const pathParts = path.split('.')
+    const newPatient = JSON.parse(JSON.stringify(editedPatient))
+
+    let current: any = newPatient
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      current = current[pathParts[i]]
+    }
+    const array = current[pathParts[pathParts.length - 1]]
+    if (Array.isArray(array)) {
+      array.push(item)
+    }
+
+    setEditedPatient(newPatient)
+  }
+
+  const removeArrayItem = (path: string, index: number) => {
+    if (!editedPatient) return
+
+    const pathParts = path.split('.')
+    const newPatient = JSON.parse(JSON.stringify(editedPatient))
+
+    let current: any = newPatient
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      current = current[pathParts[i]]
+    }
+    const array = current[pathParts[pathParts.length - 1]]
+    if (Array.isArray(array)) {
+      array.splice(index, 1)
+    }
+
+    setEditedPatient(newPatient)
+  }
+
+  const addTag = (tag: string) => {
+    if (!editedPatient || !tag.trim()) return
+    if (!editedPatient.tags) {
+      editedPatient.tags = []
+    }
+    if (!editedPatient.tags.includes(tag.trim())) {
+      addArrayItem('tags', tag.trim())
+    }
+  }
+
+  const removeTag = (index: number) => {
+    removeArrayItem('tags', index)
+  }
+
+  // Filtering and sorting
+  const filteredPatients = patients
+    .filter((p) => {
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        const fullName = `${p.personalInfo.firstName} ${p.personalInfo.lastName}`.toLowerCase()
+        const phone = p.personalInfo.phone.toLowerCase()
+        const email = p.personalInfo.email.toLowerCase()
+        if (!fullName.includes(query) && !phone.includes(query) && !email.includes(query)) {
+          return false
+        }
+      }
+
+      if (statusFilter !== "all" && p.status !== statusFilter) return false
+
+      if (tagFilter !== "all") {
+        if (!p.tags || !p.tags.includes(tagFilter)) return false
+      }
+
+      return true
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return `${a.personalInfo.firstName} ${a.personalInfo.lastName}`.localeCompare(
+            `${b.personalInfo.firstName} ${b.personalInfo.lastName}`
+          )
+        case "age":
+          return a.personalInfo.age - b.personalInfo.age
+        case "lastVisit":
+          return b.visitHistory.lastVisit.getTime() - a.visitHistory.lastVisit.getTime()
+        case "totalVisits":
+          return b.visitHistory.totalVisits - a.visitHistory.totalVisits
+        default:
+          return 0
+      }
+    })
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Pacienti</h1>
-          <p className="text-gray-600 mt-1">Správa databáze pacientů</p>
+          <p className="text-gray-600 mt-1">Správa databáze pacientů ({patients.length} celkem)</p>
         </div>
         <Button className="bg-blue-600 hover:bg-blue-700">
           <Plus className="w-4 h-4 mr-2" />
@@ -147,60 +258,104 @@ export default function PatientsPage() {
         </Button>
       </div>
 
+      {/* Filters */}
+      <div className="flex gap-3 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Hledat jméno, telefon, email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <select
+          className="border rounded-lg px-3 py-2"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          aria-label="Filtrovat podle statusu"
+        >
+          <option value="all">Všechny statusy</option>
+          <option value="active">Aktivní</option>
+          <option value="inactive">Neaktivní</option>
+          <option value="archived">Archivovaní</option>
+        </select>
+        <select
+          className="border rounded-lg px-3 py-2"
+          value={tagFilter}
+          onChange={(e) => setTagFilter(e.target.value)}
+          aria-label="Filtrovat podle tagů"
+        >
+          <option value="all">Všechny tagy</option>
+          <option value="VIP">VIP</option>
+          <option value="Pravidelný">Pravidelný</option>
+          <option value="Nový">Nový</option>
+          <option value="Rizikový">Rizikový</option>
+        </select>
+        <select
+          className="border rounded-lg px-3 py-2"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          aria-label="Seřadit pacienty"
+        >
+          <option value="name">Podle jména</option>
+          <option value="age">Podle věku</option>
+          <option value="lastVisit">Podle návštěvy</option>
+        </select>
+      </div>
+
+      {/* Patients Table */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <CardTitle>Seznam pacientů ({filteredPatients.length})</CardTitle>
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Hledat pacienta..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
+          <CardTitle>Seznam pacientů ({filteredPatients.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Jméno</th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Telefon</th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Email</th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Poslední návštěva</th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Akce</th>
+              <thead className="border-b">
+                <tr>
+                  <th className="text-left py-3 px-4 font-medium text-sm">Pacient</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm">Věk</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm">Telefon</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm">Poslední návštěva</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm">Akce</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredPatients.map((patient) => (
-                  <tr key={patient.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium">{patient.name}</td>
-                    <td className="py-3 px-4 text-gray-600">{patient.phone}</td>
-                    <td className="py-3 px-4 text-gray-600">{patient.email}</td>
-                    <td className="py-3 px-4 text-gray-600">{patient.lastVisit}</td>
+                  <tr key={patient.id} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedPatient(patient)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Detail
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-600 hover:text-gray-700 hover:bg-gray-100"
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Upravit
-                        </Button>
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="font-medium">
+                            {patient.personalInfo.firstName} {patient.personalInfo.lastName}
+                          </div>
+                          <div className="text-xs text-gray-500">{patient.personalInfo.email}</div>
+                        </div>
                       </div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-600">{patient.personalInfo.age}</td>
+                    <td className="py-3 px-4">
+                      <a href={`tel:${patient.personalInfo.phone}`} className="text-blue-600 hover:underline text-sm">
+                        {patient.personalInfo.phone}
+                      </a>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      {formatRelativeTime(patient.visitHistory.lastVisit)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setSelectedPatient(patient)
+                          setIsDetailOpen(true)
+                        }}
+                        title="Zobrazit detail"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Detail
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -211,66 +366,854 @@ export default function PatientsPage() {
       </Card>
 
       {/* Patient Detail Modal */}
-      <Dialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="!w-[80vw] !max-w-[80vw] h-[95vh] flex flex-col sm:!max-w-[80vw]">
           <DialogHeader>
-            <DialogTitle>Detail pacienta</DialogTitle>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-2xl">
+                  {selectedPatient?.personalInfo.firstName} {selectedPatient?.personalInfo.lastName}
+                </DialogTitle>
+                <p className="text-sm text-gray-500 mt-1">
+                  ID: {selectedPatient?.id} • Věk: {selectedPatient ? Math.floor((new Date().getTime() - new Date(selectedPatient.personalInfo.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25)) : 0} let
+                </p>
+                <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>Poslední návštěva: {selectedPatient ? formatDate(selectedPatient.visitHistory.lastVisit) : ''}</span>
+                  <span className="text-gray-400">•</span>
+                  <span>{selectedPatient ? formatRelativeTime(selectedPatient.visitHistory.lastVisit) : ''}</span>
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {isEditMode ? (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSaveEdit}
+                      className="bg-green-50 hover:bg-green-100 text-green-700 border-green-300"
+                    >
+                      <Save className="w-4 h-4 mr-1" />
+                      Uložit změny
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      className="text-gray-600"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Zrušit
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleStartEdit}
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Upravit
+                  </Button>
+                )}
+              </div>
+            </div>
+          </DialogHeader>
+
+          {selectedPatient && (
+            <Tabs defaultValue="personal" className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="grid w-full grid-cols-5 shrink-0">
+                <TabsTrigger value="personal">
+                  <User className="w-4 h-4 mr-1" />
+                  Osobní
+                </TabsTrigger>
+                <TabsTrigger value="medical">
+                  <Heart className="w-4 h-4 mr-1" />
+                  Zdravotní
+                </TabsTrigger>
+                <TabsTrigger value="visits">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  Návštěvy
+                </TabsTrigger>
+                <TabsTrigger value="financial">
+                  <CreditCard className="w-4 h-4 mr-1" />
+                  Finance
+                </TabsTrigger>
+                <TabsTrigger value="other">
+                  <Tag className="w-4 h-4 mr-1" />
+                  Ostatní
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Personal Info Tab */}
+              <TabsContent value="personal" className="mt-0 overflow-y-auto flex-1 p-6">
+                {/* Main Info Grid */}
+                <div className="grid grid-cols-6 gap-x-6 gap-y-4 pb-4 border-b">
+                  <div className="col-span-2">
+                    <div className="text-xs text-gray-500 mb-1">Jméno</div>
+                    {isEditMode && editedPatient ? (
+                      <Input
+                        value={editedPatient.personalInfo.firstName}
+                        onChange={(e) => updateEditedField('personalInfo.firstName', e.target.value)}
+                        className="h-9"
+                      />
+                    ) : (
+                      <div className="font-semibold text-gray-900">{selectedPatient.personalInfo.firstName}</div>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <div className="text-xs text-gray-500 mb-1">Příjmení</div>
+                    {isEditMode && editedPatient ? (
+                      <Input
+                        value={editedPatient.personalInfo.lastName}
+                        onChange={(e) => updateEditedField('personalInfo.lastName', e.target.value)}
+                        className="h-9"
+                      />
+                    ) : (
+                      <div className="font-semibold text-gray-900">{selectedPatient.personalInfo.lastName}</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Věk</div>
+                    <div className="font-semibold text-gray-900">
+                      {Math.floor((new Date().getTime() - new Date(selectedPatient.personalInfo.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))} let
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Pohlaví</div>
+                    {isEditMode && editedPatient ? (
+                      <select
+                        value={editedPatient.personalInfo.gender}
+                        onChange={(e) => updateEditedField('personalInfo.gender', e.target.value)}
+                        className="w-full h-9 px-2 text-sm border border-gray-300 rounded-md"
+                        aria-label="Pohlaví"
+                      >
+                        <option value="male">Muž</option>
+                        <option value="female">Žena</option>
+                      </select>
+                    ) : (
+                      <div className="font-semibold text-gray-900">{selectedPatient.personalInfo.gender === "male" ? "Muž" : "Žena"}</div>
+                    )}
+                  </div>
+
+                  <div className="col-span-2">
+                    <div className="text-xs text-gray-500 mb-1">Datum narození</div>
+                    {isEditMode && editedPatient ? (
+                      <Input
+                        type="date"
+                        value={new Date(editedPatient.personalInfo.dateOfBirth).toISOString().split('T')[0]}
+                        onChange={(e) => updateEditedField('personalInfo.dateOfBirth', new Date(e.target.value))}
+                        className="h-9"
+                      />
+                    ) : (
+                      <div className="font-semibold text-gray-900">{formatDate(selectedPatient.personalInfo.dateOfBirth)}</div>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <div className="text-xs text-gray-500 mb-1">Telefon</div>
+                    {isEditMode && editedPatient ? (
+                      <Input
+                        type="tel"
+                        value={editedPatient.personalInfo.phone}
+                        onChange={(e) => updateEditedField('personalInfo.phone', e.target.value)}
+                        className="h-9"
+                      />
+                    ) : (
+                      <a href={`tel:${selectedPatient.personalInfo.phone}`} className="font-semibold text-blue-600 hover:underline">
+                        {selectedPatient.personalInfo.phone}
+                      </a>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <div className="text-xs text-gray-500 mb-1">Email</div>
+                    {isEditMode && editedPatient ? (
+                      <Input
+                        type="email"
+                        value={editedPatient.personalInfo.email}
+                        onChange={(e) => updateEditedField('personalInfo.email', e.target.value)}
+                        className="h-9"
+                      />
+                    ) : (
+                      <a href={`mailto:${selectedPatient.personalInfo.email}`} className="font-semibold text-blue-600 hover:underline break-all">
+                        {selectedPatient.personalInfo.email}
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Address Section */}
+                {(selectedPatient.personalInfo.address || (isEditMode && editedPatient?.personalInfo.address)) && (
+                  <div className="grid grid-cols-6 gap-x-6 gap-y-4 py-4 border-b">
+                    <div className="col-span-3">
+                      <div className="text-xs text-gray-500 mb-1">Ulice a číslo</div>
+                      {isEditMode && editedPatient ? (
+                        <Input
+                          placeholder="Ulice a číslo"
+                          value={editedPatient.personalInfo.address?.street || ''}
+                          onChange={(e) => updateEditedField('personalInfo.address.street', e.target.value)}
+                          className="h-9"
+                        />
+                      ) : (
+                        <div className="font-semibold text-gray-900">{selectedPatient.personalInfo.address?.street}</div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">PSČ</div>
+                      {isEditMode && editedPatient ? (
+                        <Input
+                          placeholder="PSČ"
+                          value={editedPatient.personalInfo.address?.zip || ''}
+                          onChange={(e) => updateEditedField('personalInfo.address.zip', e.target.value)}
+                          className="h-9"
+                        />
+                      ) : (
+                        <div className="font-semibold text-gray-900">{selectedPatient.personalInfo.address?.zip}</div>
+                      )}
+                    </div>
+                    <div className="col-span-2">
+                      <div className="text-xs text-gray-500 mb-1">Město</div>
+                      {isEditMode && editedPatient ? (
+                        <Input
+                          placeholder="Město"
+                          value={editedPatient.personalInfo.address?.city || ''}
+                          onChange={(e) => updateEditedField('personalInfo.address.city', e.target.value)}
+                          className="h-9"
+                        />
+                      ) : (
+                        <div className="font-semibold text-gray-900">{selectedPatient.personalInfo.address?.city}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick Actions */}
+                <div className="py-4 border-b">
+                  <div className="text-xs font-medium text-gray-500 mb-3">RYCHLÉ AKCE</div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.location.href = `tel:${selectedPatient.personalInfo.phone}`}
+                    >
+                      <Phone className="w-4 h-4 mr-1.5" />
+                      Zavolat
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.location.href = `mailto:${selectedPatient.personalInfo.email}`}
+                    >
+                      <Mail className="w-4 h-4 mr-1.5" />
+                      Email
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => alert(`Odeslání SMS na ${selectedPatient.personalInfo.phone}`)}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-1.5" />
+                      SMS
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Verification Section */}
+                <div className="py-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-xs font-medium text-gray-500">OVĚŘENÍ KONTAKTU</div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleVerifyContact(selectedPatient)}
+                        className="text-green-600 hover:text-green-700 h-7 text-xs"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                        Ověřit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSendVerificationLink(selectedPatient)}
+                        className="text-blue-600 hover:text-blue-700 h-7 text-xs"
+                      >
+                        <Send className="w-3.5 h-3.5 mr-1" />
+                        Odeslat odkaz
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-6 gap-x-6">
+                    <div className="col-span-3">
+                      <div className="text-xs text-gray-500 mb-1">Status</div>
+                      {getVerificationBadge(selectedPatient)}
+                    </div>
+                    {selectedPatient.contactVerifiedAt && (
+                      <div className="col-span-3">
+                        <div className="text-xs text-gray-500 mb-1">Naposledy ověřeno</div>
+                        <div className="font-semibold text-gray-900">{formatDate(selectedPatient.contactVerifiedAt)}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{formatRelativeTime(selectedPatient.contactVerifiedAt)}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Medical Info Tab */}
+              <TabsContent value="medical" className="mt-0 overflow-y-auto flex-1 p-6">
+                {/* Blood Type */}
+                <div className="grid grid-cols-6 gap-x-6 pb-4 border-b">
+                  <div className="col-span-2">
+                    <div className="text-xs text-gray-500 mb-1">Krevní skupina</div>
+                    {isEditMode && editedPatient ? (
+                      <Input
+                        placeholder="A+, A-, B+, B-, AB+, AB-, 0+, 0-"
+                        value={editedPatient.medicalInfo.bloodType || ''}
+                        onChange={(e) => updateEditedField('medicalInfo.bloodType', e.target.value)}
+                        className="h-9"
+                      />
+                    ) : (
+                      <div className="font-semibold text-gray-900 text-lg">{selectedPatient.medicalInfo.bloodType || '-'}</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Allergies */}
+                <div className="py-4 border-b">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertCircle className="w-4 h-4 text-red-600" />
+                    <div className="text-xs font-medium text-red-700 uppercase">Alergie</div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {(isEditMode && editedPatient ? editedPatient.medicalInfo.allergies : selectedPatient.medicalInfo.allergies)?.map((allergy, i) => (
+                      <Badge key={i} className="bg-red-100 text-red-800 flex items-center gap-1 text-xs">
+                        {allergy}
+                        {isEditMode && (
+                          <button
+                            type="button"
+                            onClick={() => removeArrayItem('medicalInfo.allergies', i)}
+                            className="ml-1 hover:text-red-900"
+                            aria-label={`Odstranit alergii ${allergy}`}
+                            title={`Odstranit ${allergy}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                  {isEditMode && (
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        placeholder="Nová alergie"
+                        id="new-allergy"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            const input = e.target as HTMLInputElement
+                            if (input.value.trim()) {
+                              addArrayItem('medicalInfo.allergies', input.value.trim())
+                              input.value = ''
+                            }
+                          }
+                        }}
+                        className="flex-1 h-9"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById('new-allergy') as HTMLInputElement
+                          if (input?.value.trim()) {
+                            addArrayItem('medicalInfo.allergies', input.value.trim())
+                            input.value = ''
+                          }
+                        }}
+                        className="h-9"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Conditions */}
+                <div className="py-4 border-b">
+                  <div className="text-xs font-medium text-gray-500 mb-3 uppercase">Zdravotní podmínky</div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {(isEditMode && editedPatient ? editedPatient.medicalInfo.conditions : selectedPatient.medicalInfo.conditions)?.map((condition, i) => (
+                      <Badge key={i} className="bg-orange-100 text-orange-800 flex items-center gap-1 text-xs">
+                        {condition}
+                        {isEditMode && (
+                          <button
+                            type="button"
+                            onClick={() => removeArrayItem('medicalInfo.conditions', i)}
+                            className="ml-1 hover:text-orange-900"
+                            aria-label={`Odstranit podmínku ${condition}`}
+                            title={`Odstranit ${condition}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                  {isEditMode && (
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        placeholder="Nová zdravotní podmínka"
+                        id="new-condition"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            const input = e.target as HTMLInputElement
+                            if (input.value.trim()) {
+                              addArrayItem('medicalInfo.conditions', input.value.trim())
+                              input.value = ''
+                            }
+                          }
+                        }}
+                        className="flex-1 h-9"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById('new-condition') as HTMLInputElement
+                          if (input?.value.trim()) {
+                            addArrayItem('medicalInfo.conditions', input.value.trim())
+                            input.value = ''
+                          }
+                        }}
+                        className="h-9"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Medications */}
+                <div className="py-4 border-b">
+                  <div className="text-xs font-medium text-gray-500 mb-3 uppercase">Medikace</div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {(isEditMode && editedPatient ? editedPatient.medicalInfo.medications : selectedPatient.medicalInfo.medications)?.map((medication, i) => (
+                      <Badge key={i} className="bg-blue-100 text-blue-800 flex items-center gap-1 text-xs">
+                        {medication}
+                        {isEditMode && (
+                          <button
+                            type="button"
+                            onClick={() => removeArrayItem('medicalInfo.medications', i)}
+                            className="ml-1 hover:text-blue-900"
+                            aria-label={`Odstranit medikaci ${medication}`}
+                            title={`Odstranit ${medication}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                  {isEditMode && (
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        placeholder="Nová medikace"
+                        id="new-medication"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            const input = e.target as HTMLInputElement
+                            if (input.value.trim()) {
+                              addArrayItem('medicalInfo.medications', input.value.trim())
+                              input.value = ''
+                            }
+                          }
+                        }}
+                        className="flex-1 h-9"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById('new-medication') as HTMLInputElement
+                          if (input?.value.trim()) {
+                            addArrayItem('medicalInfo.medications', input.value.trim())
+                            input.value = ''
+                          }
+                        }}
+                        className="h-9"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Notes */}
+                <div className="py-4">
+                  <div className="text-xs font-medium text-gray-500 mb-3 uppercase">Poznámky</div>
+                  {isEditMode && editedPatient ? (
+                    <textarea
+                      value={editedPatient.medicalInfo.notes || ''}
+                      onChange={(e) => updateEditedField('medicalInfo.notes', e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md min-h-[100px]"
+                      placeholder="Zdravotní poznámky..."
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-700">{selectedPatient.medicalInfo.notes || '-'}</p>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Visits Tab */}
+              <TabsContent value="visits" className="space-y-3 mt-3 overflow-y-auto flex-1">
+                <div className="grid grid-cols-4 gap-3">
+                  <Card>
+                    <CardContent className="p-3">
+                      <div className="text-sm text-gray-600">Celkem návštěv</div>
+                      <div className="text-2xl font-bold text-blue-600">{selectedPatient.visitHistory.totalVisits}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-3">
+                      <div className="text-sm text-gray-600">Nadcházející</div>
+                      <div className="text-2xl font-bold text-green-600">{selectedPatient.visitHistory.upcomingAppointments}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-3">
+                      <div className="text-sm text-gray-600">Zrušení</div>
+                      <div className="text-2xl font-bold text-orange-600">{selectedPatient.visitHistory.cancellations}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-3">
+                      <div className="text-sm text-gray-600">Nedorazy</div>
+                      <div className="text-2xl font-bold text-red-600">{selectedPatient.visitHistory.noShows}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Historie návštěv</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="col-span-2">
+                        <div className="text-sm text-gray-600">První návštěva</div>
+                        <div className="font-medium">{formatDate(selectedPatient.visitHistory.firstVisit)}</div>
+                        <div className="text-xs text-gray-500">{formatRelativeTime(selectedPatient.visitHistory.firstVisit)}</div>
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-sm text-gray-600">Poslední návštěva</div>
+                        <div className="font-medium">{formatDate(selectedPatient.visitHistory.lastVisit)}</div>
+                        <div className="text-xs text-gray-500">{formatRelativeTime(selectedPatient.visitHistory.lastVisit)}</div>
+                      </div>
+                    </div>
+
+                    {/* Visit Frequency */}
+                    <div className="pt-2 border-t mt-2">
+                      <div className="flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-blue-600" />
+                        <div className="text-sm text-gray-600">Pravidelnost</div>
+                      </div>
+                      <div className="mt-1.5 p-2.5 bg-blue-50 rounded-lg">
+                        <div className="text-sm font-medium text-blue-900">
+                          Průměrně každé {Math.round(
+                            (selectedPatient.visitHistory.lastVisit.getTime() - selectedPatient.visitHistory.firstVisit.getTime()) /
+                            (1000 * 60 * 60 * 24 * 30) / selectedPatient.visitHistory.totalVisits
+                          )} měsíců
+                        </div>
+                        <div className="text-xs text-blue-700 mt-1">
+                          {selectedPatient.visitHistory.totalVisits} návštěv za {Math.round(
+                            (selectedPatient.visitHistory.lastVisit.getTime() - selectedPatient.visitHistory.firstVisit.getTime()) /
+                            (1000 * 60 * 60 * 24 * 30)
+                          )} měsíců
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Financial Tab */}
+              <TabsContent value="financial" className="space-y-3 mt-3 overflow-y-auto flex-1">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Finanční přehled</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
+                    <div>
+                      <div className="text-sm text-gray-600">Celkem zaplaceno</div>
+                      <div className="text-3xl font-bold text-green-600">
+                        {formatCurrency(selectedPatient.financial.totalSpent)}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-3">
+                      {selectedPatient.financial.lastPayment && (
+                        <div className="col-span-2">
+                          <div className="text-sm text-gray-600">Poslední platba</div>
+                          <div className="font-medium">{formatDate(selectedPatient.financial.lastPayment)}</div>
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-sm text-gray-600">Způsob platby</div>
+                        <div className="font-medium">
+                          {selectedPatient.financial.paymentMethod === "cash" && "Hotovost"}
+                          {selectedPatient.financial.paymentMethod === "card" && "Karta"}
+                          {selectedPatient.financial.paymentMethod === "transfer" && "Převod"}
+                        </div>
+                      </div>
+                      {selectedPatient.financial.insurance && (
+                        <div>
+                          <div className="text-sm text-gray-600">Pojišťovna</div>
+                          <div className="font-medium">{selectedPatient.financial.insurance}</div>
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-sm text-gray-600">Průměrná platba</div>
+                        <div className="font-medium text-green-600">
+                          {formatCurrency(Math.round(selectedPatient.financial.totalSpent / selectedPatient.visitHistory.totalVisits))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Other Tab */}
+              <TabsContent value="other" className="space-y-3 mt-3 overflow-y-auto flex-1">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Tagy a kategorie</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {(isEditMode && editedPatient ? editedPatient.tags : selectedPatient.tags)?.map((tag, i) => (
+                        <Badge key={i} className={`${getTagColor(tag)} flex items-center gap-1`}>
+                          {tag}
+                          {isEditMode && (
+                            <button
+                              type="button"
+                              onClick={() => removeTag(i)}
+                              className="ml-1 hover:opacity-70"
+                              aria-label={`Odstranit tag ${tag}`}
+                              title={`Odstranit ${tag}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                    {isEditMode && (
+                      <div className="flex gap-2 mt-3">
+                        <Input
+                          placeholder="Nový tag"
+                          id="new-tag"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              const input = e.target as HTMLInputElement
+                              if (input.value.trim()) {
+                                addTag(input.value.trim())
+                                input.value = ''
+                              }
+                            }
+                          }}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            const input = document.getElementById('new-tag') as HTMLInputElement
+                            if (input?.value.trim()) {
+                              addTag(input.value.trim())
+                              input.value = ''
+                            }
+                          }}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    {!isEditMode && (!selectedPatient.tags || selectedPatient.tags.length === 0) && (
+                      <p className="text-sm text-gray-500">Žádné tagy</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Preference</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="col-span-2">
+                        <div className="text-sm text-gray-600 mb-1">Preferovaný lékař</div>
+                        {isEditMode && editedPatient ? (
+                          <Input
+                            value={editedPatient.preferences.preferredDoctor || ''}
+                            onChange={(e) => updateEditedField('preferences.preferredDoctor', e.target.value)}
+                            placeholder="Jméno lékaře"
+                          />
+                        ) : (
+                          <div className="font-medium">{selectedPatient.preferences.preferredDoctor || '-'}</div>
+                        )}
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-sm text-gray-600 mb-1">Preferované dny</div>
+                        {isEditMode && editedPatient ? (
+                          <Input
+                            value={editedPatient.preferences.preferredDays?.join(', ') || ''}
+                            onChange={(e) => updateEditedField('preferences.preferredDays', e.target.value.split(',').map(d => d.trim()).filter(d => d))}
+                            placeholder="Po, St, Pá"
+                          />
+                        ) : (
+                          <div className="font-medium">{selectedPatient.preferences.preferredDays?.join(", ") || '-'}</div>
+                        )}
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-sm text-gray-600 mb-1">Komunikační kanál</div>
+                        {isEditMode && editedPatient ? (
+                          <select
+                            value={editedPatient.preferences.communicationChannel}
+                            onChange={(e) => updateEditedField('preferences.communicationChannel', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            aria-label="Komunikační kanál"
+                          >
+                            <option value="phone">Telefon</option>
+                            <option value="email">Email</option>
+                            <option value="sms">SMS</option>
+                            <option value="whatsapp">WhatsApp</option>
+                          </select>
+                        ) : (
+                          <div className="font-medium">
+                            {selectedPatient.preferences.communicationChannel === "phone" && "Telefon"}
+                            {selectedPatient.preferences.communicationChannel === "email" && "Email"}
+                            {selectedPatient.preferences.communicationChannel === "sms" && "SMS"}
+                            {selectedPatient.preferences.communicationChannel === "whatsapp" && "WhatsApp"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-sm text-gray-600 mb-1">Marketingový souhlas</div>
+                        {isEditMode && editedPatient ? (
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={editedPatient.preferences.marketingConsent}
+                              onChange={(e) => updateEditedField('preferences.marketingConsent', e.target.checked)}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm">Souhlas s marketingovou komunikací</span>
+                          </label>
+                        ) : (
+                          <div className="font-medium">
+                            {selectedPatient.preferences.marketingConsent ? "Ano" : "Ne"}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Systémové informace</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    <div className="grid grid-cols-4 gap-3">
+                      <div>
+                        <div className="text-sm text-gray-600">Vytvořeno</div>
+                        <div className="font-medium">{formatDate(selectedPatient.createdAt)}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-600">Naposledy upraveno</div>
+                        <div className="font-medium">{formatDate(selectedPatient.updatedAt)}</div>
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-sm text-gray-600 mb-1">Status</div>
+                        {isEditMode && editedPatient ? (
+                          <select
+                            value={editedPatient.status}
+                            onChange={(e) => updateEditedField('status', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            aria-label="Status pacienta"
+                          >
+                            <option value="active">Aktivní</option>
+                            <option value="inactive">Neaktivní</option>
+                            <option value="archived">Archivován</option>
+                          </select>
+                        ) : (
+                          getStatusBadge(selectedPatient.status)
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Patient Edit Modal */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Upravit pacienta</DialogTitle>
           </DialogHeader>
           {selectedPatient && (
             <div className="space-y-6">
-              {/* Patient Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm text-gray-600">Jméno a věk</div>
-                  <div className="font-semibold text-lg">{selectedPatient.name}</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Jméno</label>
+                  <Input defaultValue={selectedPatient.personalInfo.firstName} />
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Telefon</div>
-                  <div className="font-medium">{selectedPatient.phone}</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Příjmení</label>
+                  <Input defaultValue={selectedPatient.personalInfo.lastName} />
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Email</div>
-                  <div className="font-medium">{selectedPatient.email}</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Věk</label>
+                  <Input type="number" defaultValue={selectedPatient.personalInfo.age} />
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Poslední návštěva</div>
-                  <div className="font-medium">{selectedPatient.lastVisit}</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
+                  <Input type="tel" defaultValue={selectedPatient.personalInfo.phone} />
                 </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <Input type="email" defaultValue={selectedPatient.personalInfo.email} />
+                </div>
+                {selectedPatient.personalInfo.address && (
+                  <>
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Ulice</label>
+                      <Input defaultValue={selectedPatient.personalInfo.address.street} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Město</label>
+                      <Input defaultValue={selectedPatient.personalInfo.address.city} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">PSČ</label>
+                      <Input defaultValue={selectedPatient.personalInfo.address.zip} />
+                    </div>
+                  </>
+                )}
               </div>
 
-              {/* Visit History */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Historie návštěv</h3>
-                <div className="space-y-2">
-                  {selectedPatient.visitHistory && selectedPatient.visitHistory.length > 0 ? (
-                    selectedPatient.visitHistory.slice(0, 5).map((visit, index) => (
-                      <div key={index} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">{visit.service}</div>
-                          {visit.notes && <div className="text-sm text-gray-600">{visit.notes}</div>}
-                        </div>
-                        <div className="text-sm text-gray-500">{visit.date}</div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-lg">Žádná historie návštěv</div>
-                  )}
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Zdravotní poznámky</label>
+                <Input defaultValue={selectedPatient.medicalInfo.notes || ""} />
               </div>
 
-              {/* Notes */}
-              {selectedPatient.notes && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Poznámky</h3>
-                  <div className="p-3 bg-blue-50 rounded-lg text-sm text-gray-700">{selectedPatient.notes}</div>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t">
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700">Objednat termín</Button>
-                <Button variant="outline" className="flex-1 bg-transparent">
-                  Upravit údaje
+              <div className="flex gap-3 justify-end pt-4 border-t">
+                <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+                  Zrušit
+                </Button>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Uložit změny
                 </Button>
               </div>
             </div>

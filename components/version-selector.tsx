@@ -1,6 +1,7 @@
 "use client"
 import { Check, X, Info } from "lucide-react"
 import Link from "next/link"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
@@ -144,6 +145,21 @@ export function VersionSelector() {
 }
 
 function ComparisonModal() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" className="text-blue-600 hover:text-blue-700" disabled>
+        <Info className="w-4 h-4 mr-2" />
+        Srovnat verze
+      </Button>
+    )
+  }
+
   return (
     <Dialog>
       <DialogTrigger asChild>

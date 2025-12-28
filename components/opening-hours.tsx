@@ -1,18 +1,43 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Clock } from "lucide-react"
+import { useOfficeHours, DayOfWeek } from "@/lib/office-hours-context"
 
-const hours = [
-  { day: "Pondělí", time: "8:00 - 16:00" },
-  { day: "Úterý", time: "8:00 - 16:00" },
-  { day: "Středa", time: "8:00 - 16:00" },
-  { day: "Čtvrtek", time: "8:00 - 16:00" },
-  { day: "Pátek", time: "8:00 - 16:00" },
-  { day: "Oběd", time: "12:00 - 13:00", isBreak: true },
-  { day: "Sobota", time: "Zavřeno", isClosed: true },
-  { day: "Neděle", time: "Zavřeno", isClosed: true },
-]
+const DAY_LABELS: Record<DayOfWeek, string> = {
+  monday: "Pondělí",
+  tuesday: "Úterý",
+  wednesday: "Středa",
+  thursday: "Čtvrtek",
+  friday: "Pátek",
+  saturday: "Sobota",
+  sunday: "Neděle"
+}
+
+const DAYS_ORDER: DayOfWeek[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
 export function OpeningHours() {
+  const { officeHours } = useOfficeHours()
+
+  // Format time blocks for display
+  const formatTimeBlocks = (day: DayOfWeek) => {
+    const daySchedule = officeHours.schedule[day]
+
+    if (!daySchedule.isOpen) {
+      return "Zavřeno"
+    }
+
+    // Sort blocks by start time
+    const sortedBlocks = [...daySchedule.timeBlocks].sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
+    )
+
+    // Format each block
+    return sortedBlocks
+      .map(block => `${block.startTime} - ${block.endTime}`)
+      .join(", ")
+  }
+
   return (
     <section className="py-16 md:py-24 bg-[#f8fafc]">
       <div className="container mx-auto px-4">
@@ -26,29 +51,33 @@ export function OpeningHours() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {hours.map((item, index) => (
-                  <div
-                    key={index}
-                    className={`flex justify-between items-center py-3 px-4 rounded-lg ${
-                      item.isBreak
-                        ? "bg-amber-50 border border-amber-200"
-                        : item.isClosed
+                {DAYS_ORDER.map((day) => {
+                  const daySchedule = officeHours.schedule[day]
+                  const timeText = formatTimeBlocks(day)
+                  const isClosed = !daySchedule.isOpen
+
+                  return (
+                    <div
+                      key={day}
+                      className={`flex justify-between items-center py-3 px-4 rounded-lg ${
+                        isClosed
                           ? "bg-gray-50"
                           : "bg-white border border-gray-200"
-                    }`}
-                  >
-                    <span className={`font-medium ${item.isClosed ? "text-gray-500" : "text-gray-900"}`}>
-                      {item.day}
-                    </span>
-                    <span
-                      className={`font-semibold ${
-                        item.isBreak ? "text-amber-700" : item.isClosed ? "text-gray-500" : "text-[#059669]"
                       }`}
                     >
-                      {item.time}
-                    </span>
-                  </div>
-                ))}
+                      <span className={`font-medium ${isClosed ? "text-gray-500" : "text-gray-900"}`}>
+                        {DAY_LABELS[day]}
+                      </span>
+                      <span
+                        className={`font-semibold ${
+                          isClosed ? "text-gray-500" : "text-[#059669]"
+                        }`}
+                      >
+                        {timeText}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>

@@ -2,6 +2,12 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { Suspense } from "react"
+import { TierProvider } from "@/lib/tier-context"
+import { OfficeHoursProvider } from "@/lib/office-hours-context"
+import { UserProvider } from "@/lib/user-context"
+import { AppointmentProvider } from "@/lib/appointment-context"
+import { TierSelector } from "@/components/tier-selector"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -39,7 +45,18 @@ export default function RootLayout({
   return (
     <html lang="cs">
       <body className={`font-sans antialiased`}>
-        {children}
+        <Suspense fallback={null}>
+          <TierProvider>
+            <UserProvider>
+              <OfficeHoursProvider>
+                <AppointmentProvider>
+                  <TierSelector />
+                  {children}
+                </AppointmentProvider>
+              </OfficeHoursProvider>
+            </UserProvider>
+          </TierProvider>
+        </Suspense>
         <Analytics />
       </body>
     </html>

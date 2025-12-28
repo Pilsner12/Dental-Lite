@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Edit, Trash2, Eye, Plus } from "lucide-react"
+import { Edit, Trash2, Eye, Plus, Lock, Mail, MessageSquare, Users, Zap, Puzzle, Grid } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
+import { useTier } from "@/lib/tier-context"
+import { OfficeHoursEditor } from "@/components/office-hours-editor"
 
 interface Service {
   id: string
@@ -45,6 +48,20 @@ interface SmsTemplate {
 }
 
 export default function SettingsPage() {
+  const { hasFeature, isFeatureLocked } = useTier()
+  
+  const settingsTabs = [
+    { id: "pricing", label: "Ceník služeb", feature: "settings_basic", locked: false },
+    { id: "announcements", label: "Aktuality", feature: "settings_basic", locked: false },
+    { id: "hours", label: "Ordinační hodiny", feature: "settings_basic", locked: false },
+    { id: "email", label: "Email šablony", feature: "settings_advanced", locked: isFeatureLocked("settings_advanced") },
+    { id: "sms", label: "SMS šablony", feature: "settings_advanced", locked: isFeatureLocked("settings_advanced") },
+    { id: "team", label: "Tým", feature: "settings_advanced", locked: isFeatureLocked("settings_advanced") },
+    { id: "automation", label: "Automatizace", feature: "automation", locked: isFeatureLocked("automation") },
+    { id: "integrations", label: "Integrace", feature: "integrations", locked: isFeatureLocked("integrations") },
+    { id: "chairs", label: "Více křesel", feature: "multiple_chairs", locked: isFeatureLocked("multiple_chairs") },
+  ]
+  
   const [services, setServices] = useState<Service[]>([
     { id: "1", name: "Preventivní prohlídka", price: 800 },
     { id: "2", name: "Zubní výplň (plomba)", price: 1500 },
@@ -132,7 +149,7 @@ export default function SettingsPage() {
   ])
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Nastavení</h1>
         <p className="text-gray-600 mt-1">Správa služeb a provozních údajů</p>
@@ -140,12 +157,22 @@ export default function SettingsPage() {
 
       <Tabs defaultValue="pricing" className="space-y-4">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="pricing">Ceník</TabsTrigger>
-          <TabsTrigger value="announcements">Aktuality</TabsTrigger>
-          <TabsTrigger value="hours">Ordinační hodiny</TabsTrigger>
-          <TabsTrigger value="team">Tým</TabsTrigger>
-          <TabsTrigger value="email">Email šablony</TabsTrigger>
-          <TabsTrigger value="sms">SMS šablony</TabsTrigger>
+          {settingsTabs.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              disabled={tab.locked}
+              className={tab.locked ? "relative opacity-50 cursor-not-allowed" : ""}
+            >
+              {tab.locked && (
+                <Badge className="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  <Lock className="w-2.5 h-2.5 inline mr-0.5" />
+                  PROFI
+                </Badge>
+              )}
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         {/* Pricing Tab */}
@@ -201,7 +228,7 @@ export default function SettingsPage() {
             <CardContent>
               <div className="space-y-3">
                 {announcements.map((announcement) => (
-                  <div key={announcement.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div key={announcement.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex-1">{announcement.text}</div>
                     <Button variant="ghost" size="sm">
                       <Edit className="h-4 w-4" />
@@ -222,39 +249,12 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Ordinační hodiny</CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Nastavte pracovní dobu pro jednotlivé dny v týdnu
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {["Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota", "Neděle"].map((day) => {
-                  const isClosed = day === "Sobota" || day === "Neděle"
-                  return (
-                    <div key={day} className="flex items-center gap-4">
-                      <div className="w-28 font-medium text-gray-700">{day}</div>
-                      {isClosed ? (
-                        <div className="text-red-600 font-medium">❌ Zavřeno</div>
-                      ) : (
-                        <>
-                          <Input type="time" defaultValue="08:00" className="w-32" />
-                          <span className="text-gray-500">-</span>
-                          <Input type="time" defaultValue="16:00" className="w-32" />
-                          <div className="flex items-center gap-2">
-                            <Switch defaultChecked />
-                            <span className="text-sm text-gray-600">✅ Zapnuto</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )
-                })}
-                <div className="pt-4 border-t">
-                  <div className="flex items-center gap-4">
-                    <div className="w-28 font-medium text-gray-700">Polední pauza</div>
-                    <Input type="time" defaultValue="12:00" className="w-32" />
-                    <span className="text-gray-500">-</span>
-                    <Input type="time" defaultValue="13:00" className="w-32" />
-                  </div>
-                </div>
-              </div>
+              <OfficeHoursEditor />
             </CardContent>
           </Card>
         </TabsContent>
@@ -356,6 +356,212 @@ export default function SettingsPage() {
                     <div className="text-xs text-gray-500 mt-1">Délka: {template.text.length} znaků</div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Automation Tab - PROFI ONLY */}
+        <TabsContent value="automation">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                Automatizace
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Automatické připomínky a kampaně pro pacienty
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Preventive Reminder */}
+                <div className="bg-white border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <Switch defaultChecked />
+                      <div>
+                        <h4 className="font-medium">Připomínka preventivní prohlídky</h4>
+                        <p className="text-sm text-gray-500">
+                          Odeslat po 6 měsících od poslední návštěvy
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="bg-gray-50 rounded p-3 mb-3 text-sm">
+                    📅 Odeslat po <strong>6 měsících</strong> od poslední návštěvy
+                    <br />
+                    📱 Kanál: Email, SMS
+                  </div>
+                  <div className="grid grid-cols-4 gap-3 text-sm">
+                    <div className="text-center p-2 bg-blue-50 rounded">
+                      <div className="font-semibold text-blue-600">142</div>
+                      <div className="text-gray-600">Odesláno</div>
+                    </div>
+                    <div className="text-center p-2 bg-green-50 rounded">
+                      <div className="font-semibold text-green-600">98</div>
+                      <div className="text-gray-600">Otevřeno</div>
+                    </div>
+                    <div className="text-center p-2 bg-purple-50 rounded">
+                      <div className="font-semibold text-purple-600">45</div>
+                      <div className="text-gray-600">Kliknuto</div>
+                    </div>
+                    <div className="text-center p-2 bg-orange-50 rounded">
+                      <div className="font-semibold text-orange-600">23</div>
+                      <div className="text-gray-600">Objednáno</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Birthday */}
+                <div className="bg-white border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <Switch defaultChecked />
+                      <div>
+                        <h4 className="font-medium">Narozeninové přání + sleva</h4>
+                        <p className="text-sm text-gray-500">
+                          Pošle narozeninové přání 7 dní před narozeninami
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="bg-gray-50 rounded p-3 mb-3 text-sm">
+                    🎂 Odeslat <strong>7 dní</strong> před narozeninami
+                    <br />
+                    🎁 Sleva: <strong>10%</strong> na hygienu
+                  </div>
+                </div>
+
+                {/* Review Request */}
+                <div className="bg-white border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <Switch defaultChecked />
+                      <div>
+                        <h4 className="font-medium">Žádost o hodnocení</h4>
+                        <p className="text-sm text-gray-500">
+                          Požádá o hodnocení 2 dny po návštěvě
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="bg-gray-50 rounded p-3 mb-3 text-sm">
+                    ⭐ Odeslat <strong>2 dny</strong> po návštěvě
+                  </div>
+                </div>
+
+                <Button className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Přidat automatizační pravidlo
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Integrations Tab - PROFI ONLY */}
+        <TabsContent value="integrations">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Puzzle className="w-5 h-5" />
+                Integrace
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Propojení s externími službami
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
+                      📧
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Google Calendar</h4>
+                      <p className="text-sm text-gray-500">Synchronizace termínů</p>
+                    </div>
+                  </div>
+                  <Button variant="outline">Připojit</Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded flex items-center justify-center">
+                      💬
+                    </div>
+                    <div>
+                      <h4 className="font-medium">WhatsApp Business</h4>
+                      <p className="text-sm text-gray-500">Automatické zprávy</p>
+                    </div>
+                  </div>
+                  <Button variant="outline">Připojit</Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded flex items-center justify-center">
+                      📊
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Google Analytics</h4>
+                      <p className="text-sm text-gray-500">Sledování návštěvnosti</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">Připojeno</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Multiple Chairs Tab - PROFI ONLY */}
+        <TabsContent value="chairs">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Grid className="w-5 h-5" />
+                Více křesel
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Správa více pracovišť / zubních křesel
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="font-medium">Křeslo 1 - Hlavní ordinace</h4>
+                      <p className="text-sm text-gray-500">MUDr. Jana Nováková</p>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800">Aktivní</Badge>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Po-Pá: 8:00-16:00
+                  </div>
+                </div>
+
+                <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                  <Button className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Přidat další křeslo
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Rozšiřte kapacitu ordinace o další pracovní místa
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
