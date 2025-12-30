@@ -180,6 +180,10 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Ceník služeb</CardTitle>
+              <p className="text-sm text-gray-600 mt-2">
+                Zde můžete upravit ceny služeb, které se zobrazí na webu a v kalendáři. 
+                Pokud některou službu neposkytujete, klidně ji smažte.
+              </p>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -224,6 +228,9 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Aktuality pro pacienty</CardTitle>
+              <p className="text-sm text-gray-600 mt-2">
+                Zprávy, které se zobrazí na hlavní stránce webu. Např. "Ordinace 24.12. zavřeno" nebo "Nové platby kartou".
+              </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -249,8 +256,9 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Ordinační hodiny</CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                Nastavte pracovní dobu pro jednotlivé dny v týdnu
+              <p className="text-sm text-gray-600 mt-2">
+                Nastaví, kdy ordinace funguje. Při rezervaci termínu pacienti uvidí jen časy v otevírací době.
+                Můžete přidat i obědovou pauzu (2 bloky časů).
               </p>
             </CardHeader>
             <CardContent>
@@ -264,6 +272,10 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Tým ordinace</CardTitle>
+              <p className="text-sm text-gray-600 mt-2">
+                Seznam lidí v ordinaci. Pokud máte jen séba + sestra, stačí 2 záznamy.
+                Tato data se zobrazují na webu v sekci "O nás".
+              </p>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4">

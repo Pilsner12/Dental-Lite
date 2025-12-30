@@ -7,6 +7,8 @@ import { TierProvider } from "@/lib/tier-context"
 import { OfficeHoursProvider } from "@/lib/office-hours-context"
 import { UserProvider } from "@/lib/user-context"
 import { AppointmentProvider } from "@/lib/appointment-context"
+import { InventoryProvider } from "@/lib/inventory-context"
+import { WaitlistProvider } from "@/lib/waitlist-context"
 import { TierSelector } from "@/components/tier-selector"
 import "./globals.css"
 
@@ -50,8 +52,12 @@ export default function RootLayout({
             <UserProvider>
               <OfficeHoursProvider>
                 <AppointmentProvider>
-                  <TierSelector />
-                  {children}
+                  <InventoryProvider>
+                    <WaitlistProvider>
+                      <TierSelector />
+                      {children}
+                    </WaitlistProvider>
+                  </InventoryProvider>
                 </AppointmentProvider>
               </OfficeHoursProvider>
             </UserProvider>

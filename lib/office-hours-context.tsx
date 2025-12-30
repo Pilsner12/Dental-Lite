@@ -11,9 +11,17 @@ export interface TimeBlock {
   endTime: string   // Format: "HH:MM"
 }
 
+export interface Break {
+  id: string
+  name: string
+  startTime: string // Format: "HH:MM"
+  endTime: string   // Format: "HH:MM"
+}
+
 export interface DaySchedule {
   isOpen: boolean
   timeBlocks: TimeBlock[]
+  breaks: Break[]
 }
 
 export interface OfficeHoursData {
@@ -32,6 +40,9 @@ export interface OfficeHoursContextType {
   addTimeBlock: (day: DayOfWeek, timeBlock: Omit<TimeBlock, 'id'>) => void
   removeTimeBlock: (day: DayOfWeek, blockId: string) => void
   updateTimeBlock: (day: DayOfWeek, blockId: string, updates: Partial<Omit<TimeBlock, 'id'>>) => void
+  addBreak: (day: DayOfWeek, breakData: Omit<Break, 'id'>) => void
+  removeBreak: (day: DayOfWeek, breakId: string) => void
+  updateBreak: (day: DayOfWeek, breakId: string, updates: Partial<Omit<Break, 'id'>>) => void
   isTimeSlotAvailable: (day: DayOfWeek, time: string) => boolean
   getTimeSlotStatus: (day: DayOfWeek, time: string) => 'available' | 'closed' | 'outside-hours'
   validateTimeBlock: (timeBlock: Omit<TimeBlock, 'id'>, day: DayOfWeek, existingBlockId?: string) => ValidationResult
@@ -54,7 +65,6 @@ function blocksOverlap(block1: Omit<TimeBlock, 'id'>, block2: TimeBlock): boolea
 function isValidOfficeHoursData(data: any): data is OfficeHoursData {
   return data &&
          data.schedule &&
-         data.lunchBreak &&
          typeof data.lastUpdated === 'string'
 }
 
@@ -67,31 +77,38 @@ const defaultOfficeHours: OfficeHoursData = {
   schedule: {
     monday: {
       isOpen: true,
-      timeBlocks: [{ id: generateId(), startTime: "08:00", endTime: "16:00" }]
+      timeBlocks: [{ id: generateId(), startTime: "07:00", endTime: "16:00" }],
+      breaks: [{ id: generateId(), name: "Obědová pauza", startTime: "11:00", endTime: "12:00" }]
     },
     tuesday: {
       isOpen: true,
-      timeBlocks: [{ id: generateId(), startTime: "08:00", endTime: "16:00" }]
+      timeBlocks: [{ id: generateId(), startTime: "07:00", endTime: "16:00" }],
+      breaks: [{ id: generateId(), name: "Obědová pauza", startTime: "11:00", endTime: "12:00" }]
     },
     wednesday: {
       isOpen: true,
-      timeBlocks: [{ id: generateId(), startTime: "08:00", endTime: "16:00" }]
+      timeBlocks: [{ id: generateId(), startTime: "07:00", endTime: "16:00" }],
+      breaks: [{ id: generateId(), name: "Obědová pauza", startTime: "11:00", endTime: "12:00" }]
     },
     thursday: {
       isOpen: true,
-      timeBlocks: [{ id: generateId(), startTime: "08:00", endTime: "16:00" }]
+      timeBlocks: [{ id: generateId(), startTime: "07:00", endTime: "16:00" }],
+      breaks: [{ id: generateId(), name: "Obědová pauza", startTime: "11:00", endTime: "12:00" }]
     },
     friday: {
       isOpen: true,
-      timeBlocks: [{ id: generateId(), startTime: "08:00", endTime: "16:00" }]
+      timeBlocks: [{ id: generateId(), startTime: "07:00", endTime: "16:00" }],
+      breaks: [{ id: generateId(), name: "Obědová pauza", startTime: "11:00", endTime: "12:00" }]
     },
     saturday: {
       isOpen: false,
-      timeBlocks: []
+      timeBlocks: [],
+      breaks: []
     },
     sunday: {
       isOpen: false,
-      timeBlocks: []
+      timeBlocks: [],
+      breaks: []
     }
   },
   lastUpdated: new Date().toISOString()
@@ -115,7 +132,20 @@ export function OfficeHoursProvider({ children }: { children: ReactNode }) {
       try {
         const parsed = JSON.parse(stored)
         if (isValidOfficeHoursData(parsed)) {
-          setOfficeHours(parsed)
+          // Migrace: pokud breaks chybí, přidej prázdné pole
+          const migratedSchedule = Object.keys(parsed.schedule).reduce((acc, day) => {
+            const daySchedule = parsed.schedule[day as DayOfWeek]
+            acc[day as DayOfWeek] = {
+              ...daySchedule,
+              breaks: daySchedule.breaks || []
+            }
+            return acc
+          }, {} as Record<DayOfWeek, DaySchedule>)
+
+          setOfficeHours({
+            ...parsed,
+            schedule: migratedSchedule
+          })
         }
       } catch (error) {
         console.error("Failed to parse office hours from localStorage:", error)
@@ -203,6 +233,73 @@ export function OfficeHoursProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  // Add break
+  const addBreak = (day: DayOfWeek, breakData: Omit<Break, 'id'>) => {
+    const newBreak: Break = {
+      ...breakData,
+      id: generateId()
+    }
+
+    setOfficeHours(prev => {
+      const daySchedule = prev.schedule[day]
+      const updated = {
+        ...prev,
+        schedule: {
+          ...prev.schedule,
+          [day]: {
+            ...daySchedule,
+            breaks: [...daySchedule.breaks, newBreak]
+          }
+        },
+        lastUpdated: new Date().toISOString()
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  // Remove break
+  const removeBreak = (day: DayOfWeek, breakId: string) => {
+    setOfficeHours(prev => {
+      const daySchedule = prev.schedule[day]
+      const updated = {
+        ...prev,
+        schedule: {
+          ...prev.schedule,
+          [day]: {
+            ...daySchedule,
+            breaks: daySchedule.breaks.filter(b => b.id !== breakId)
+          }
+        },
+        lastUpdated: new Date().toISOString()
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  // Update break
+  const updateBreak = (day: DayOfWeek, breakId: string, updates: Partial<Omit<Break, 'id'>>) => {
+    setOfficeHours(prev => {
+      const daySchedule = prev.schedule[day]
+      const updated = {
+        ...prev,
+        schedule: {
+          ...prev.schedule,
+          [day]: {
+            ...daySchedule,
+            breaks: daySchedule.breaks.map(b =>
+              b.id === breakId ? { ...b, ...updates } : b
+            )
+          }
+        },
+        lastUpdated: new Date().toISOString()
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      return updated
+    })
+  }
+
   // Validate time block
   const validateTimeBlock = (
     timeBlock: Omit<TimeBlock, 'id'>,
@@ -280,6 +377,9 @@ export function OfficeHoursProvider({ children }: { children: ReactNode }) {
     addTimeBlock,
     removeTimeBlock,
     updateTimeBlock,
+    addBreak,
+    removeBreak,
+    updateBreak,
     isTimeSlotAvailable,
     getTimeSlotStatus,
     validateTimeBlock,

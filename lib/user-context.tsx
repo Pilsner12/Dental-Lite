@@ -9,6 +9,7 @@ export interface User {
   firstName: string
   lastName: string
   role: "admin" | "doctor" | "assistant"
+  dailyNote?: string // LEAN feature - denní poznámka pro sestru/doktora
   createdAt: Date
   lastLogin: Date
 }
@@ -34,7 +35,9 @@ interface UserContextType {
   currentUser: User | null
   users: User[]
   auditLog: AuditLogEntry[]
+  dailyNote: string
   setCurrentUser: (user: User | null) => void
+  setDailyNote: (note: string) => void
   addUser: (user: Omit<User, "id" | "createdAt" | "lastLogin">) => void
   updateUser: (id: string, updates: Partial<User>) => void
   deleteUser: (id: string) => void
@@ -60,12 +63,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([])
+  const [dailyNote, setDailyNoteState] = useState<string>("")
 
   // Load from localStorage
   useEffect(() => {
     const savedCurrentUser = localStorage.getItem("dental_current_user")
     const savedUsers = localStorage.getItem("dental_users")
     const savedAuditLog = localStorage.getItem("dental_audit_log")
+    const savedDailyNote = localStorage.getItem("dental_daily_note")
 
     if (savedCurrentUser) {
       const parsed = JSON.parse(savedCurrentUser)
@@ -100,6 +105,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
         timestamp: new Date(entry.timestamp)
       })))
     }
+
+    if (savedDailyNote) {
+      setDailyNoteState(savedDailyNote)
+    }
   }, [])
 
   // Save users to localStorage
@@ -115,6 +124,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("dental_audit_log", JSON.stringify(auditLog))
     }
   }, [auditLog])
+
+  // Save daily note to localStorage
+  const setDailyNote = (note: string) => {
+    setDailyNoteState(note)
+    localStorage.setItem("dental_daily_note", note)
+  }
 
   const getUserLimit = (tier: Tier): number | null => {
     switch (tier) {
@@ -223,7 +238,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
       currentUser,
       users,
       auditLog,
+      dailyNote,
       setCurrentUser,
+      setDailyNote,
       addUser,
       updateUser,
       deleteUser,

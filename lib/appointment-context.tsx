@@ -15,23 +15,43 @@ export interface Appointment {
   duration: number // minutes (30, 60, 90)
   service: string
   status: AppointmentStatus
+  isUrgent?: boolean // LEAN feature - označení urgentního termínu
   notes?: string
   createdAt: Date
   updatedAt: Date
 }
 
+export interface HistoryEntry {
+  id: string
+  timestamp: Date
+  action: "create" | "update" | "delete" | "drag" | "resize"
+  appointmentId: string
+  oldData?: Partial<Appointment>
+  newData?: Partial<Appointment>
+  description: string
+  userName?: string // Kdo provedl změnu
+  userRole?: string // Role uživatele
+}
+
 interface AppointmentContextType {
   appointments: Appointment[]
+  history: HistoryEntry[]
   addAppointment: (appointment: Omit<Appointment, "id" | "createdAt" | "updatedAt">) => void
-  updateAppointment: (id: string, updates: Partial<Appointment>) => void
+  updateAppointment: (id: string, updates: Partial<Appointment>, action?: "drag" | "resize" | "update") => void
   deleteAppointment: (id: string) => void
   getAppointmentsByDate: (date: Date) => Appointment[]
   getAppointmentsByDateRange: (startDate: Date, endDate: Date) => Appointment[]
   getAppointmentsByPatient: (patientId: string) => Appointment[]
   hasConflict: (date: Date, time: string, duration: number, excludeId?: string) => boolean
+  undoChange: (historyId: string) => void
+  clearHistory: () => void
+  addToHistory: (action: HistoryEntry["action"], appointmentId: string, oldData?: Partial<Appointment>, newData?: Partial<Appointment>, description?: string, userName?: string, userRole?: string) => void
 }
 
 const AppointmentContext = createContext<AppointmentContextType | undefined>(undefined)
+
+// Counter for unique IDs - initialized from timestamp to avoid collisions
+let idCounter = Date.now() % 10000
 
 // Mock appointments for demo
 function generateMockAppointments(): Appointment[] {
@@ -104,7 +124,7 @@ function generateMockAppointments(): Appointment[] {
         const status = weightedRandom(statuses, statusWeights)
 
         appointments.push({
-          id: `apt-${week}-${day}-${i}-${Date.now()}`,
+          id: `apt-${week}-${day}-${i}-${Date.now()}-${Math.random()}`,
           patientId: patient.id,
           patientName: `${patient.personalInfo.firstName} ${patient.personalInfo.lastName}`,
           date: appointmentDate,
@@ -112,6 +132,7 @@ function generateMockAppointments(): Appointment[] {
           duration: service.duration,
           service: service.name,
           status,
+          isUrgent: Math.random() > 0.85, // 15% chance of urgent appointment
           notes: Math.random() > 0.7 ? "Pacient žádá ranní termín" : undefined,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -131,6 +152,7 @@ const MOCK_APPOINTMENTS: Appointment[] = generateMockAppointments()
 
 export function AppointmentProvider({ children }: { children: ReactNode }) {
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [history, setHistory] = useState<HistoryEntry[]>([])
 
   // Load from localStorage
   useEffect(() => {
@@ -151,6 +173,31 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
       setAppointments(MOCK_APPOINTMENTS)
       localStorage.setItem("dental_appointments", JSON.stringify(MOCK_APPOINTMENTS))
     }
+    
+    const savedHistory = localStorage.getItem("dental_history")
+    if (savedHistory) {
+      const parsedHistory = JSON.parse(savedHistory).map((entry: any) => ({
+        ...entry,
+        timestamp: new Date(entry.timestamp),
+      }))
+      
+      // Remove duplicates - keep only first occurrence of each ID
+      const seen = new Set<string>()
+      const uniqueHistory = parsedHistory.filter((entry: HistoryEntry) => {
+        if (seen.has(entry.id)) {
+          return false
+        }
+        seen.add(entry.id)
+        return true
+      })
+      
+      setHistory(uniqueHistory)
+      
+      // Save cleaned history back to localStorage
+      if (uniqueHistory.length !== parsedHistory.length) {
+        localStorage.setItem("dental_history", JSON.stringify(uniqueHistory))
+      }
+    }
   }, [])
 
   // Save to localStorage
@@ -159,23 +206,105 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("dental_appointments", JSON.stringify(appointments))
     }
   }, [appointments])
+  
+  useEffect(() => {
+    if (history.length > 0) {
+      localStorage.setItem("dental_history", JSON.stringify(history))
+    }
+  }, [history])
+
+  const addToHistory = (action: HistoryEntry["action"], appointmentId: string, oldData?: Partial<Appointment>, newData?: Partial<Appointment>, description?: string, userName?: string, userRole?: string) => {
+    const entry: HistoryEntry = {
+      id: `history-${Date.now()}-${++idCounter}`,
+      timestamp: new Date(),
+      action,
+      appointmentId,
+      oldData,
+      newData,
+      description: description || `${action} - ${appointmentId}`,
+      userName: userName || "Administrátor", // Default user until we have auth
+      userRole: userRole || "admin",
+    }
+    setHistory((prev) => [entry, ...prev].slice(0, 100)) // Keep last 100 entries
+  }
 
   const addAppointment = (appointmentData: Omit<Appointment, "id" | "createdAt" | "updatedAt">) => {
     const newAppointment: Appointment = {
       ...appointmentData,
-      id: `apt-${Date.now()}`,
+      id: `apt-${Date.now()}-${++idCounter}`,
       createdAt: new Date(),
       updatedAt: new Date(),
     }
     setAppointments((prev) => [...prev, newAppointment])
+    addToHistory("create", newAppointment.id, undefined, newAppointment, `Vytvořen termín: ${newAppointment.patientName}`)
   }
 
-  const updateAppointment = (id: string, updates: Partial<Appointment>) => {
-    setAppointments((prev) => prev.map((apt) => (apt.id === id ? { ...apt, ...updates, updatedAt: new Date() } : apt)))
+  const updateAppointment = (id: string, updates: Partial<Appointment>, action?: "drag" | "resize" | "update") => {
+    setAppointments((prev) => {
+      const oldApt = prev.find((apt) => apt.id === id)
+      if (!oldApt) return prev
+      
+      const updatedApt = { ...oldApt, ...updates, updatedAt: new Date() }
+      
+      // Only add to history if action is provided
+      if (action) {
+        // Create description based on action
+        let description = ""
+        if (action === "drag") {
+          const oldTime = oldApt.time
+          const newTime = updates.time || oldApt.time
+          const oldDate = new Date(oldApt.date).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" })
+          const newDate = updates.date ? new Date(updates.date).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" }) : oldDate
+          
+          if (oldDate !== newDate) {
+            description = `Změněno datum: ${oldApt.patientName} z ${oldDate} na ${newDate}`
+          } else {
+            description = `Přesunut termín: ${oldApt.patientName} na ${newTime}`
+          }
+        } else if (action === "resize") {
+          const newDuration = updates.duration !== undefined ? updates.duration : oldApt.duration
+          description = `Změněna délka: ${oldApt.patientName} z ${oldApt.duration} min na ${newDuration} min`
+        } else {
+          description = `Upraven termín: ${oldApt.patientName}`
+        }
+        
+        addToHistory(action, id, oldApt, updatedApt, description)
+      }
+      
+      return prev.map((apt) => (apt.id === id ? updatedApt : apt))
+    })
   }
 
   const deleteAppointment = (id: string) => {
+    const apt = appointments.find((a) => a.id === id)
+    if (apt) {
+      addToHistory("delete", id, apt, undefined, `Smazán termín: ${apt.patientName}`)
+    }
     setAppointments((prev) => prev.filter((apt) => apt.id !== id))
+  }
+  
+  const undoChange = (historyId: string) => {
+    const entry = history.find((h) => h.id === historyId)
+    if (!entry || !entry.oldData) return
+    
+    // Restore old data WITHOUT creating new history entry
+    if (entry.action === "delete" && entry.oldData) {
+      // Recreate deleted appointment
+      setAppointments((prev) => [...prev, entry.oldData as Appointment])
+    } else {
+      // Restore updated appointment
+      setAppointments((prev) =>
+        prev.map((apt) => (apt.id === entry.appointmentId ? { ...apt, ...entry.oldData } : apt))
+      )
+    }
+    
+    // Don't add to history - just mark the entry as undone or remove it
+    setHistory((prev) => prev.filter((h) => h.id !== historyId))
+  }
+  
+  const clearHistory = () => {
+    setHistory([])
+    localStorage.removeItem("dental_history")
   }
 
   const getAppointmentsByDate = (date: Date): Appointment[] => {
@@ -225,12 +354,8 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
       const existingStart = parseTime(apt.time)
       const existingEnd = existingStart + apt.duration
 
-      // Check if times overlap
-      return (
-        (newStart >= existingStart && newStart < existingEnd) ||
-        (newEnd > existingStart && newEnd <= existingEnd) ||
-        (newStart <= existingStart && newEnd >= existingEnd)
-      )
+      // Check if times overlap - two intervals overlap if one starts before the other ends
+      return newStart < existingEnd && newEnd > existingStart
     })
   }
 
@@ -238,6 +363,7 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
     <AppointmentContext.Provider
       value={{
         appointments,
+        history,
         addAppointment,
         updateAppointment,
         deleteAppointment,
@@ -245,6 +371,9 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
         getAppointmentsByDateRange,
         getAppointmentsByPatient,
         hasConflict,
+        undoChange,
+        clearHistory,
+        addToHistory,
       }}
     >
       {children}

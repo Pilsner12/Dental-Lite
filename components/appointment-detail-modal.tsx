@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useRouter } from "next/navigation"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,6 +21,7 @@ import {
   Phone,
   History,
   Ban,
+  ExternalLink,
 } from "lucide-react"
 import { MOCK_PATIENTS } from "@/lib/mock-patients"
 
@@ -52,15 +54,16 @@ const DURATIONS = [
 ]
 
 const STATUS_CONFIG = {
-  confirmed: { label: "Potvrzeno", color: "text-green-700 bg-green-50 border-green-200", icon: CheckCircle2 },
-  pending: { label: "Čeká na potvrzení", color: "text-yellow-700 bg-yellow-50 border-yellow-200", icon: AlertCircle },
-  completed: { label: "Dokončeno", color: "text-blue-700 bg-blue-50 border-blue-200", icon: CheckCircle2 },
-  cancelled: { label: "Zrušeno", color: "text-red-700 bg-red-50 border-red-200", icon: XCircle },
-  "no-show": { label: "Nedostavil se", color: "text-gray-700 bg-gray-50 border-gray-200", icon: XCircle },
-  blocked: { label: "Neordinuje se", color: "text-purple-700 bg-purple-50 border-purple-200", icon: Ban },
+  confirmed: { label: "Potvrzeno", color: "text-gray-900 bg-green-50 border-green-200", icon: CheckCircle2 },
+  pending: { label: "Čeká na potvrzení", color: "text-gray-900 bg-yellow-50 border-yellow-200", icon: AlertCircle },
+  completed: { label: "Dokončeno", color: "text-gray-900 bg-gray-50 border-gray-200", icon: CheckCircle2 },
+  cancelled: { label: "Zrušeno", color: "text-gray-900 bg-gray-50 border-gray-200", icon: XCircle },
+  "no-show": { label: "Nedostavil se", color: "text-gray-900 bg-gray-50 border-gray-200", icon: XCircle },
+  blocked: { label: "Neordinuje se", color: "text-gray-900 bg-gray-50 border-gray-200", icon: Ban },
 }
 
 export function AppointmentDetailModal({ open, onClose, appointment }: AppointmentDetailModalProps) {
+  const router = useRouter()
   const { updateAppointment, deleteAppointment, hasConflict, getAppointmentsByPatient } = useAppointments()
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState("")
@@ -136,16 +139,19 @@ export function AppointmentDetailModal({ open, onClose, appointment }: Appointme
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Detail termínu</DialogTitle>
+          <DialogTitle className="text-xl font-medium text-gray-900">Detail termínu</DialogTitle>
+          <DialogDescription className="text-gray-500">
+            Zobrazení a úprava detailů termínu pacienta
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Status Badge */}
-          <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${statusConfig.color}`}>
-            <StatusIcon className="h-5 w-5" />
-            <span className="font-medium">{statusConfig.label}</span>
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-md border ${statusConfig.color}`}>
+            <StatusIcon className="h-4 w-4" />
+            <span className="font-medium text-sm">{statusConfig.label}</span>
             {appointment.status === "pending" && !isEditing && (
-              <Button size="sm" onClick={handleQuickConfirm} className="ml-auto bg-green-600 hover:bg-green-700">
+              <Button size="sm" onClick={handleQuickConfirm} className="ml-auto bg-gray-900 hover:bg-gray-800 text-white">
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Potvrdit termín
               </Button>
@@ -154,41 +160,55 @@ export function AppointmentDetailModal({ open, onClose, appointment }: Appointme
 
           {!isEditing ? (
             <div className="space-y-4">
-              <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                <User className="h-5 w-5 text-gray-600 mt-0.5" />
+              <div className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-md">
+                <User className="h-4 w-4 text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <div className="text-sm text-gray-600">Pacient</div>
-                  <div className="font-medium text-lg">{appointment.patientName}</div>
+                  <div className="text-xs text-gray-500">Pacient</div>
+                  <div className="font-medium text-lg text-gray-900">{appointment.patientName}</div>
                   {patient && (
-                    <a
-                      href={`tel:${patient.personalInfo.phone}`}
-                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm mt-2 font-medium"
-                    >
-                      <Phone className="h-4 w-4" />
-                      {patient.personalInfo.phone}
-                    </a>
+                    <div className="flex flex-col gap-2 mt-2">
+                      <a
+                        href={`tel:${patient.personalInfo.phone}`}
+                        className="flex items-center gap-2 text-gray-900 hover:text-gray-700 text-sm font-medium"
+                      >
+                        <Phone className="h-3.5 w-3.5" />
+                        {patient.personalInfo.phone}
+                      </a>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          router.push(`/admin/patients?id=${appointment.patientId}`)
+                          onClose()
+                        }}
+                        className="w-fit gap-2 border-gray-200 hover:bg-gray-50"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        Přejít do karty pacienta
+                      </Button>
+                    </div>
                   )}
                 </div>
                 {patientHistory.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className="ml-auto">
-                    <History className="h-4 w-4 mr-1" />
+                  <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className="ml-auto border-gray-200 hover:bg-gray-50">
+                    <History className="h-3.5 w-3.5 mr-1" />
                     Historie ({patientHistory.length})
                   </Button>
                 )}
               </div>
 
               {showHistory && patientHistory.length > 0 && (
-                <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
-                  <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                <div className="border border-gray-100 rounded-md p-4 bg-gray-50">
+                  <h4 className="font-medium text-sm mb-3 flex items-center gap-2 text-gray-900">
                     <History className="h-4 w-4" />
                     Minulé návštěvy (z diáře)
                   </h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {patientHistory.slice(0, 10).map((apt) => (
-                      <div key={apt.id} className="text-xs p-2 bg-white rounded border">
+                      <div key={apt.id} className="text-xs p-2 bg-white rounded border border-gray-100">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">{new Date(apt.date).toLocaleDateString("cs-CZ")}</span>
-                          <span className="text-gray-600">{apt.service}</span>
+                          <span className="font-medium text-gray-900">{new Date(apt.date).toLocaleDateString("cs-CZ")}</span>
+                          <span className="text-gray-500">{apt.service}</span>
                         </div>
                         {apt.notes && <div className="text-gray-500 mt-1 italic">{apt.notes}</div>}
                       </div>
@@ -198,35 +218,35 @@ export function AppointmentDetailModal({ open, onClose, appointment }: Appointme
               )}
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                  <Calendar className="h-5 w-5 text-gray-600 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-md">
+                  <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
                   <div>
-                    <div className="text-sm text-gray-600">Datum</div>
-                    <div className="font-medium">{formatDate(appointment.date)}</div>
+                    <div className="text-xs text-gray-500">Datum</div>
+                    <div className="font-medium text-gray-900">{formatDate(appointment.date)}</div>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                  <Clock className="h-5 w-5 text-gray-600 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-md">
+                  <Clock className="h-4 w-4 text-gray-400 mt-0.5" />
                   <div>
-                    <div className="text-sm text-gray-600">Čas</div>
-                    <div className="font-medium">{formatTime(appointment.time, appointment.duration)}</div>
-                    <div className="text-xs text-gray-500">({appointment.duration} minut)</div>
+                    <div className="text-xs text-gray-500">Čas</div>
+                    <div className="font-medium text-gray-900">{formatTime(appointment.time, appointment.duration)}</div>
+                    <div className="text-xs text-gray-400">({appointment.duration} minut)</div>
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-600 mb-1">Typ ošetření</div>
-                <div className="font-medium">{appointment.service}</div>
+              <div className="p-4 bg-white border border-gray-100 rounded-md">
+                <div className="text-xs text-gray-500 mb-1">Typ ošetření</div>
+                <div className="font-medium text-gray-900">{appointment.service}</div>
               </div>
 
               {appointment.notes && (
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                  <FileText className="h-5 w-5 text-gray-600 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-md">
+                  <FileText className="h-4 w-4 text-gray-400 mt-0.5" />
                   <div className="flex-1">
-                    <div className="text-sm text-gray-600 mb-1">Poznámky</div>
-                    <div className="text-gray-800 whitespace-pre-wrap">{appointment.notes}</div>
+                    <div className="text-xs text-gray-500 mb-1">Poznámky</div>
+                    <div className="text-gray-900 whitespace-pre-wrap">{appointment.notes}</div>
                   </div>
                 </div>
               )}
@@ -314,7 +334,13 @@ export function AppointmentDetailModal({ open, onClose, appointment }: Appointme
                     <SelectItem value="confirmed">Potvrzeno</SelectItem>
                     <SelectItem value="completed">Dokončeno</SelectItem>
                     <SelectItem value="cancelled">Zrušeno</SelectItem>
-                    <SelectItem value="no-show">Nedostavil se</SelectItem>
+                    {(() => {
+                      const appointmentDateTime = new Date(appointment.date)
+                      const [hours, minutes] = appointment.time.split(':').map(Number)
+                      appointmentDateTime.setHours(hours, minutes, 0, 0)
+                      const isPast = appointmentDateTime < new Date()
+                      return isPast ? <SelectItem value="no-show">Nedostavil se</SelectItem> : null
+                    })()}
                     <SelectItem value="blocked">Neordinuje se (blokace)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -331,16 +357,16 @@ export function AppointmentDetailModal({ open, onClose, appointment }: Appointme
                 />
               </div>
 
-              {error && <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">{error}</div>}
+              {error && <div className="bg-red-50 border border-red-200 text-gray-900 px-4 py-3 rounded-md text-sm">{error}</div>}
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
             <Button
               variant="outline"
               onClick={handleDelete}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
+              className="text-gray-900 hover:bg-red-50 border-gray-200"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Smazat termín
@@ -363,17 +389,18 @@ export function AppointmentDetailModal({ open, onClose, appointment }: Appointme
                         notes: appointment.notes || "",
                       })
                     }}
+                    className="border-gray-200 hover:bg-gray-50"
                   >
                     Zrušit
                   </Button>
-                  <Button onClick={handleSave}>Uložit změny</Button>
+                  <Button onClick={handleSave} className="bg-gray-900 hover:bg-gray-800">Uložit změny</Button>
                 </>
               ) : (
                 <>
-                  <Button variant="outline" onClick={onClose}>
+                  <Button variant="outline" onClick={onClose} className="border-gray-200 hover:bg-gray-50">
                     Zavřít
                   </Button>
-                  <Button onClick={() => setIsEditing(true)}>Upravit termín</Button>
+                  <Button onClick={() => setIsEditing(true)} className="bg-gray-900 hover:bg-gray-800">Upravit termín</Button>
                 </>
               )}
             </div>

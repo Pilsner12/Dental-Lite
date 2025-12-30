@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppointments, type AppointmentStatus } from "@/lib/appointment-context"
@@ -70,6 +71,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
     duration: 30,
     service: "Kontrola",
     status: "pending" as AppointmentStatus,
+    isUrgent: false,
     notes: "",
   })
 
@@ -122,11 +124,8 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
       patientName = quickBookingData.name
     }
 
-    // Check for conflicts
-    if (hasConflict(appointmentData.date, appointmentData.time, appointmentData.duration)) {
-      setError("V tomto čase již existuje jiný termín")
-      return
-    }
+    // Check for conflicts (informative only, doesn't prevent creation)
+    const hasTimeConflict = hasConflict(appointmentData.date, appointmentData.time, appointmentData.duration)
 
     // Add appointment
     addAppointment({
@@ -137,6 +136,7 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
       duration: appointmentData.duration,
       service: appointmentData.service,
       status: appointmentData.status,
+      isUrgent: appointmentData.isUrgent,
       notes: appointmentData.notes,
     })
 
@@ -165,13 +165,16 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
       duration: 30,
       service: "Kontrola",
       status: "pending",
+      isUrgent: false,
       notes: "",
     })
     setError("")
   }
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString("cs-CZ", {
+    // Ensure we're working with a proper Date object
+    const dateObj = date instanceof Date ? date : new Date(date)
+    return dateObj.toLocaleDateString("cs-CZ", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -190,6 +193,12 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
         </DialogHeader>
 
         <div className="space-y-6">
+          {hasConflict(appointmentData.date, appointmentData.time, appointmentData.duration) && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+              ℹ️ V tomto čase již existuje jiný termín. Termíny se mohou překrývat.
+            </div>
+          )}
+          
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="existing" className="flex items-center gap-2">
@@ -447,6 +456,19 @@ export function AddAppointmentModal({ open, onClose, prefilledDate, prefilledTim
                 onChange={(e) => setAppointmentData((prev) => ({ ...prev, notes: e.target.value }))}
                 rows={3}
               />
+            </div>
+
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded p-3">
+              <Checkbox
+                id="isUrgent"
+                checked={appointmentData.isUrgent}
+                onCheckedChange={(checked) =>
+                  setAppointmentData((prev) => ({ ...prev, isUrgent: checked as boolean }))
+                }
+              />
+              <Label htmlFor="isUrgent" className="text-sm text-red-800 font-medium cursor-pointer">
+                🚨 Označit jako urgentní termín (vyšší priorita)
+              </Label>
             </div>
           </div>
 

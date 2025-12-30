@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Users, Settings, BarChart3, Menu, X, Lock, LayoutDashboard, Clock, UserCog } from "lucide-react"
+import { Calendar, Users, Settings, BarChart3, Menu, X, Lock, LayoutDashboard, Clock, UserCog, Package, History } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTier } from "@/lib/tier-context"
@@ -11,17 +11,19 @@ import { useTier } from "@/lib/tier-context"
 const navigation = [
   { name: "Přehled", href: "/admin/dashboard", icon: LayoutDashboard, feature: "admin_dashboard" },
   { name: "Diář", href: "/admin/calendar", icon: Calendar, feature: "calendar" },
+  { name: "Historie", href: "/admin/historie", icon: History, feature: "calendar" },
   { name: "Pacienti", href: "/admin/patients", icon: Users, feature: "patients" },
   { name: "Čekatelé", href: "/admin/waitlist", icon: Clock, feature: "waitlist" },
-  { name: "Uživatelé", href: "/admin/users", icon: UserCog, feature: "users" },
+  { name: "Sklad", href: "/admin/sklad", icon: Package, feature: "inventory" },
+  { name: "Uživatelé", href: "/admin/users", icon: UserCog, feature: "users_management" },
   { name: "Nastavení", href: "/admin/settings", icon: Settings, feature: "settings_basic" },
-  { name: "Statistiky", href: "/admin/stats", icon: BarChart3, feature: "advanced_stats" },
+  { name: "Statistiky", href: "/admin/stats", icon: BarChart3, feature: "basic_stats" },
 ]
 
 export function AdminSidebar() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { hasFeature, isFeatureLocked, tier } = useTier()
+  const { hasFeature, isFeatureLocked, getRequiredTier, tier } = useTier()
 
   return (
     <>
@@ -54,6 +56,7 @@ export function AdminSidebar() {
               const Icon = item.icon
               const isActive = pathname === item.href
               const locked = isFeatureLocked(item.feature)
+              const requiredTier = locked ? getRequiredTier(item.feature) : null
 
               return (
                 <Link
@@ -74,10 +77,12 @@ export function AdminSidebar() {
                 >
                   <Icon className="w-5 h-5" />
                   {item.name}
-                  {locked && (
-                    <Badge className="ml-auto bg-amber-500 text-white text-xs px-2 py-0.5">
+                  {locked && requiredTier && (
+                    <Badge className={`ml-auto text-white text-xs px-2 py-0.5 ${
+                      requiredTier === 'profi' ? 'bg-purple-500' : 'bg-blue-500'
+                    }`}>
                       <Lock className="w-3 h-3 inline mr-1" />
-                      PROFI
+                      {requiredTier.toUpperCase()}
                     </Badge>
                   )}
                 </Link>

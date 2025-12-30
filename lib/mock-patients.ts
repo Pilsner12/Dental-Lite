@@ -1,3 +1,38 @@
+export interface Visit {
+  id: string
+  date: Date
+  duration: number // minutes
+  service: string
+  diagnosis: string
+  treatment: string
+  procedures: string[]
+  notes: string
+  price: number
+  paymentStatus: "paid" | "unpaid" | "partial"
+  doctor: string
+}
+
+export interface Invoice {
+  id: string
+  invoiceNumber: string
+  date: Date
+  dueDate: Date
+  items: {
+    description: string
+    quantity: number
+    unitPrice: number
+    total: number
+  }[]
+  subtotal: number
+  tax: number
+  total: number
+  status: "paid" | "unpaid" | "partial" | "overdue"
+  paidAmount?: number
+  paidDate?: Date
+  paymentMethod?: "cash" | "card" | "transfer"
+  notes?: string
+}
+
 export interface Patient {
   id: string
   personalInfo: {
@@ -28,6 +63,7 @@ export interface Patient {
     upcomingAppointments: number
     noShows: number
     cancellations: number
+    visits?: Visit[] // Detailní historie návštěv
   }
   preferences: {
     preferredDoctor?: string
@@ -40,6 +76,7 @@ export interface Patient {
     lastPayment?: Date
     paymentMethod: "cash" | "card" | "transfer"
     insurance?: string
+    invoices?: Invoice[] // Faktury pacienta
   }
   tags?: string[]
   status: "active" | "inactive" | "archived"
@@ -72,10 +109,233 @@ export const MOCK_PATIENTS: Patient[] = [
     visitHistory: {
       firstVisit: new Date("2020-05-10"),
       lastVisit: new Date("2024-11-15"),
-      totalVisits: 12,
+      totalVisits: 18,
       upcomingAppointments: 0,
       noShows: 1,
-      cancellations: 2
+      cancellations: 2,
+      visits: [
+        {
+          id: "visit-1-1",
+          date: new Date("2024-11-15"),
+          duration: 30,
+          service: "Kontrola",
+          diagnosis: "Drobný kaz na zub 16",
+          treatment: "Preventivní kontrola, doporučena plomba",
+          procedures: ["RTG snímek", "Odstranění kamene", "Fluoridace"],
+          notes: "Pacientka má lehké krvácení dásní, doporučena změna kartáčku na měkčí. Zubní hygiena celkově dobrá, ale je třeba věnovat větší pozornost mezizubním prostorům.",
+          price: 800,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-2",
+          date: new Date("2024-05-20"),
+          duration: 60,
+          service: "Plomba",
+          diagnosis: "Kaz 2. stupně na zub 36",
+          treatment: "Výplň kompozitní pryskyřicí",
+          procedures: ["Lokální anestezie", "Odstranění kazu", "Kompozitní výplň", "Leštění"],
+          notes: "Bez komplikací, pacientka dobře snášela anestezii. Aplikována Articain 4% s adrenalinem 1:100000. Kaz byl hluboký, ale nedosahoval k pulpě. Výplň byla přizpůsobena k okluzi.",
+          price: 1500,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-3",
+          date: new Date("2024-02-12"),
+          duration: 45,
+          service: "Dentální hygiena",
+          diagnosis: "Mírný zubní kámen, gingivitis",
+          treatment: "Profesionální čištění zubů ultrazvukem",
+          procedures: ["Ultrazvukový scaling", "Air-flow", "Polishing", "Fluoridace gelová"],
+          notes: "Zubní kámen především v oblasti dolních řezáků. Dásně prokrvené, místy krvácení při sondování. Pacientce doporučeno používat mezizubní kartáčky a ústní vodu s chlorhexidinem na 14 dní.",
+          price: 850,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-4",
+          date: new Date("2023-11-10"),
+          duration: 30,
+          service: "Preventivka",
+          diagnosis: "Gingivitis marginalis",
+          treatment: "Preventivní kontrola s odstran ěním plaku",
+          procedures: ["Scaling", "Polishing", "Fluoridace"],
+          notes: "Zánět dásní, doporučena lepší ústní hygiena. Pacientka přiznala nepravidelné čištění zubů večer. Edukována o správné technice čištění.",
+          price: 600,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-5",
+          date: new Date("2023-05-08"),
+          duration: 90,
+          service: "Korunka",
+          diagnosis: "Fraktura zub 26 po endodontickém ošetření",
+          treatment: "Příprava zubu a nasazení dočasné korunky",
+          procedures: ["Lokální anestezie", "Preparace zubu", "Otisk", "Dočasná korunka", "Cementace"],
+          notes: "Zub po ošetření kořenového kanálku před 2 lety se zlomil při kousání. Provedena preparace, odebrán otisk pro keramickou korunku. Nasazena provizorní korunka, pacientka objednána za 14 dní na nasazení definitivní.",
+          price: 4500,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-6",
+          date: new Date("2023-04-24"),
+          duration: 30,
+          service: "Kontrola",
+          diagnosis: "Bolest zub 26",
+          treatment: "RTG vyšetření, diagnostika",
+          procedures: ["RTG snímek", "Klinické vyšetření", "Perkuse", "Vitalita"],
+          notes: "Pacientka udává bolest při kousání na levém horním moláru. RTG potvrdilo frakturu zubu. Zub má endodontické ošetření, je avitální. Doporučena korunka, pacientka souhlasila.",
+          price: 400,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-7",
+          date: new Date("2022-11-22"),
+          duration: 30,
+          service: "Preventivka",
+          diagnosis: "Bez patologického nálezu",
+          treatment: "Preventivní prohlídka",
+          procedures: ["Klinické vyšetření", "Odstranění měkkého plaku", "Fluoridace"],
+          notes: "Stav chrupu dobrý, bez kazu. Lehká hypersenzitivita krčků zubů 43, 44 - aplikován desenzitizační lak. Pacientka si stěžovala na citlivost na studené nápoje.",
+          price: 500,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-8",
+          date: new Date("2022-06-15"),
+          duration: 60,
+          service: "Plomba",
+          diagnosis: "Kaz aproximální 47",
+          treatment: "Výplň kompozitní pryskyřicí",
+          procedures: ["Lokální anestezie", "Cofferdam", "Odstranění kazu", "Adhezivní systém", "Kompozitní výplň", "Modelace", "Leštění"],
+          notes: "Kaz mezi zuby 46 a 47, proximální kavita Class II. Použit cofferdam pro optimální adhezi. Aplikován Articain 4%. Výplň ve 3 vrstvách s průběžnou polymerizací. Kontrola okluze artikulačním papírem.",
+          price: 1800,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-9",
+          date: new Date("2021-12-03"),
+          duration: 120,
+          service: "Ošetření kořenových kanálků",
+          diagnosis: "Pulpitis acuta zub 26",
+          treatment: "Endodontické ošetření",
+          procedures: ["Lokální anestezie", "Přístupová kavita", "Extirpace pulpy", "Měření délky kanálků", "Chemomechanická preparace", "Výplň kanálků guttaperčou", "Rentgenová kontrola"],
+          notes: "Pacientka přišla s akutními bolestmi zub 26. Diagnostikována akutní pulpitida. Provedeno endodontické ošetření ve 3 kořenových kanálcích (MB, DB, P). Kanálky vyplněny guttaperčou metodou laterální kondenzace. RTG kontrola potvrdila správné zaplnění do apexu. Doporučena korunka.",
+          price: 3500,
+          paymentStatus: "paid",
+          doctor: "MUDr. Petr Novák"
+        },
+        {
+          id: "visit-1-10",
+          date: new Date("2021-11-18"),
+          duration: 30,
+          service: "Urgentní vyšetření",
+          diagnosis: "Pulpitis acuta",
+          treatment: "Analgezie, antibiotika",
+          procedures: ["Klinické vyšetření", "RTG", "Vitalitní testy"],
+          notes: "Pacientka přišla s prudkou bolestí zub 26. Zub pozitivní na perkusi, extrémně citlivý na teplo/chlad. RTG ukázalo hluboký kaz s pravděpodobným postižením pulpy. Předepsán Ibuprofen 400mg 3x denně a Amoxicilin 1g 2x denně. Objednána na endodontické ošetření za 2 týdny.",
+          price: 600,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-11",
+          date: new Date("2021-05-10"),
+          duration: 45,
+          service: "Bělení zubů",
+          diagnosis: "Zabarvení zubů",
+          treatment: "Profesionální bělení metodou Beyond",
+          procedures: ["Čištění zubů", "Aplikace bělícího gelu", "LED aktivace", "Fluoridace"],
+          notes: "Pacientka požadovala vyšší estetiku úsměvu. Před bělením provedeno profesionální čištění. Aplikován peroxidový gel 35% ve 3 cyklech po 15 minutách. Dosaženo zesvětlení o 4 odstíny dle stupnice Vita. Doporučeno vyhýbat se barvícím látkám 48 hodin.",
+          price: 3500,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-12",
+          date: new Date("2020-11-20"),
+          duration: 30,
+          service: "Preventivka",
+          diagnosis: "Stav po sanaci chrupu",
+          treatment: "Kontrolní vyšetření",
+          procedures: ["Klinické vyšetření", "Kontrola výplní"],
+          notes: "Kontrola 6 měsíců po dokončení komplexní sanace. Všechny výplně v pořádku, bez sekundárního kazu. Pacientka spokojená, bez obtíží.",
+          price: 300,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-13",
+          date: new Date("2020-08-14"),
+          duration: 60,
+          service: "Plomba",
+          diagnosis: "Kaz 15, 25",
+          treatment: "Dvě kompozitní výplně",
+          procedures: ["Lokální anestezie", "Odstranění kazu obou zubů", "Kompozitní výplně", "Leštění"],
+          notes: "Ošetřeny dva horní premoláry, symetrický kaz okluzálních ploch. Výplně zhotoveny kompozitem odstín A2. Kontrola okluze.",
+          price: 2400,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-14",
+          date: new Date("2020-07-22"),
+          duration: 60,
+          service: "Plomba",
+          diagnosis: "Kaz 37",
+          treatment: "Kompozitní výplň",
+          procedures: ["Lokální anestezie", "Odstranění kazu", "Kompozitní výplň", "Modelace", "Leštění"],
+          notes: "Hluboký kaz na molaru, preparace provedena s opatrností k pulpě. Aplikována vložka s Ca(OH)2. Výplň bez komplikací.",
+          price: 1600,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-15",
+          date: new Date("2020-06-18"),
+          duration: 30,
+          service: "Kontrola",
+          diagnosis: "Multiple kazy",
+          treatment: "Diagnostika, plán léčby",
+          procedures: ["Panoramatický RTG", "Klinické vyšetření", "Sondování"],
+          notes: "Nalezeno 5 kazů různé hloubky. Vytvořen plán sanace: prioritně ošetřit zuby 37, 15, 25, následně 46, 47. Pacientka informována o rozsahu ošetření.",
+          price: 800,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-16",
+          date: new Date("2020-05-25"),
+          duration: 45,
+          service: "Dentální hygiena",
+          diagnosis: "Zubní kámen, plak",
+          treatment: "Iniciální ošetření před sanací",
+          procedures: ["Ultrazvukový scaling", "Air-flow", "Polishing", "Motivace a edukace"],
+          notes: "První dentální hygiena před započetím sanace. Značné množství zubního kamene, především v oblasti dolních frontálních zubů. Pacientka edukována o správné technice čištění, ukázána metoda Bass.",
+          price: 900,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-1-17",
+          date: new Date("2020-05-10"),
+          duration: 30,
+          service: "První návštěva",
+          diagnosis: "Komplexní vyšetření nového pacienta",
+          treatment: "Anamnéza, vyšetření",
+          procedures: ["Anamnéza", "Klinické vyšetření", "Plán preventivní péče"],
+          notes: "První návštěva v ordinaci. Pacientka dlouho nebyla u zubaře (cca 3 roky). Obecný zdravotní stav dobrý, alergie na penicilin zaznamenána. Doporučena dentální hygiena a následně RTG pro kompletní diagnostiku.",
+          price: 400,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        }
+      ]
     },
     preferences: {
       preferredDoctor: "MUDr. Jana Nováková",
@@ -87,7 +347,46 @@ export const MOCK_PATIENTS: Patient[] = [
       totalSpent: 18500,
       lastPayment: new Date("2024-11-15"),
       paymentMethod: "card",
-      insurance: "VZP"
+      insurance: "VZP",
+      invoices: [
+        {
+          id: "inv-1-1",
+          invoiceNumber: "2024110001",
+          date: new Date("2024-11-15"),
+          dueDate: new Date("2024-11-29"),
+          items: [
+            { description: "Preventivní kontrola", quantity: 1, unitPrice: 300, total: 300 },
+            { description: "RTG snímek", quantity: 1, unitPrice: 200, total: 200 },
+            { description: "Odstranění kamene", quantity: 1, unitPrice: 200, total: 200 },
+            { description: "Fluoridace", quantity: 1, unitPrice: 100, total: 100 }
+          ],
+          subtotal: 800,
+          tax: 0,
+          total: 800,
+          status: "paid",
+          paidAmount: 800,
+          paidDate: new Date("2024-11-15"),
+          paymentMethod: "card"
+        },
+        {
+          id: "inv-1-2",
+          invoiceNumber: "2024050012",
+          date: new Date("2024-05-20"),
+          dueDate: new Date("2024-06-03"),
+          items: [
+            { description: "Lokální anestezie", quantity: 1, unitPrice: 150, total: 150 },
+            { description: "Kompozitní výplň", quantity: 1, unitPrice: 1200, total: 1200 },
+            { description: "Leštění", quantity: 1, unitPrice: 150, total: 150 }
+          ],
+          subtotal: 1500,
+          tax: 0,
+          total: 1500,
+          status: "paid",
+          paidAmount: 1500,
+          paidDate: new Date("2024-05-20"),
+          paymentMethod: "card"
+        }
+      ]
     },
     tags: ["Pravidelný", "VIP"],
     status: "active",
@@ -120,7 +419,61 @@ export const MOCK_PATIENTS: Patient[] = [
       totalVisits: 24,
       upcomingAppointments: 1,
       noShows: 0,
-      cancellations: 1
+      cancellations: 1,
+      visits: [
+        {
+          id: "visit-2-1",
+          date: new Date("2024-12-10"),
+          duration: 90,
+          service: "Korunka",
+          diagnosis: "Zlomený zub 46, nutná korunka",
+          treatment: "Preparace zubu, otisk pro keramickou korunku",
+          procedures: ["Lokální anestezie (opatrně - diabetes)", "Broušení zubu", "Digitální otisk", "Dočasná korunka"],
+          notes: "Diabetik - prodloužené hojení, kontrola za týden",
+          price: 4500,
+          paymentStatus: "partial",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-2-2",
+          date: new Date("2024-09-15"),
+          duration: 60,
+          service: "Plomba",
+          diagnosis: "Kaz 3. stupně na zub 27",
+          treatment: "Odstranění rozsáhlého kazu, kompozitní výplň",
+          procedures: ["Lokální anestezie", "Odstranění kazu", "Podložka", "Kompozitní výplň", "Tvarování"],
+          notes: "Rozsáhlý kaz, pravidelné kontroly nutné",
+          price: 1800,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-2-3",
+          date: new Date("2024-06-05"),
+          duration: 30,
+          service: "Kontrola",
+          diagnosis: "Stav po léčbě dobrý",
+          treatment: "Preventivní kontrola",
+          procedures: ["Klinické vyšetření", "Odstranění kamene", "Fluoridace"],
+          notes: "Pravidelná kontrola diabetika, dobrý stav chrupu",
+          price: 700,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        },
+        {
+          id: "visit-2-4",
+          date: new Date("2024-03-10"),
+          duration: 120,
+          service: "Implantát",
+          diagnosis: "Chybějící zub 36",
+          treatment: "Konzultace implantátu, plánování",
+          procedures: ["RTG panorama", "3D CT snímek", "Konzultace", "Plánování implantace"],
+          notes: "Pacient zvažuje implantát, nutná konzultace s diabetologem",
+          price: 2500,
+          paymentStatus: "paid",
+          doctor: "MUDr. Jana Nováková"
+        }
+      ]
     },
     preferences: {
       preferredDoctor: "MUDr. Jana Nováková",
@@ -132,7 +485,66 @@ export const MOCK_PATIENTS: Patient[] = [
       totalSpent: 45200,
       lastPayment: new Date("2024-12-10"),
       paymentMethod: "cash",
-      insurance: "VZP"
+      insurance: "VZP",
+      invoices: [
+        {
+          id: "inv-2-1",
+          invoiceNumber: "2024120015",
+          date: new Date("2024-12-10"),
+          dueDate: new Date("2024-12-24"),
+          items: [
+            { description: "Preparace pro korunky", quantity: 1, unitPrice: 2000, total: 2000 },
+            { description: "Digitální otisk", quantity: 1, unitPrice: 800, total: 800 },
+            { description: "Dočasná korunka", quantity: 1, unitPrice: 500, total: 500 },
+            { description: "Keramická korunka (záloha 50%)", quantity: 1, unitPrice: 6000, total: 3000 }
+          ],
+          subtotal: 6300,
+          tax: 0,
+          total: 6300,
+          status: "partial",
+          paidAmount: 2500,
+          paidDate: new Date("2024-12-10"),
+          paymentMethod: "cash",
+          notes: "Záloha 2500 Kč, zbytek po osazení korunky"
+        },
+        {
+          id: "inv-2-2",
+          invoiceNumber: "2024090008",
+          date: new Date("2024-09-15"),
+          dueDate: new Date("2024-09-29"),
+          items: [
+            { description: "Lokální anestezie", quantity: 1, unitPrice: 150, total: 150 },
+            { description: "Odstranění kazu", quantity: 1, unitPrice: 500, total: 500 },
+            { description: "Podložka", quantity: 1, unitPrice: 200, total: 200 },
+            { description: "Kompozitní výplň", quantity: 1, unitPrice: 950, total: 950 }
+          ],
+          subtotal: 1800,
+          tax: 0,
+          total: 1800,
+          status: "paid",
+          paidAmount: 1800,
+          paidDate: new Date("2024-09-15"),
+          paymentMethod: "cash"
+        },
+        {
+          id: "inv-2-3",
+          invoiceNumber: "2024030005",
+          date: new Date("2024-03-10"),
+          dueDate: new Date("2024-03-24"),
+          items: [
+            { description: "RTG panorama", quantity: 1, unitPrice: 500, total: 500 },
+            { description: "3D CT snímek", quantity: 1, unitPrice: 1200, total: 1200 },
+            { description: "Konzultace implantologie", quantity: 1, unitPrice: 800, total: 800 }
+          ],
+          subtotal: 2500,
+          tax: 0,
+          total: 2500,
+          status: "paid",
+          paidAmount: 2500,
+          paidDate: new Date("2024-03-10"),
+          paymentMethod: "cash"
+        }
+      ]
     },
     tags: ["Pravidelný", "VIP"],
     status: "active",

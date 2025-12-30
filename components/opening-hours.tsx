@@ -38,6 +38,19 @@ export function OpeningHours() {
       .join(", ")
   }
 
+  // Format breaks for display
+  const formatBreaks = (day: DayOfWeek) => {
+    const daySchedule = officeHours.schedule[day]
+
+    if (!daySchedule.isOpen || !daySchedule.breaks || daySchedule.breaks.length === 0) {
+      return null
+    }
+
+    return daySchedule.breaks
+      .map(b => `${b.name}: ${b.startTime} - ${b.endTime}`)
+      .join(", ")
+  }
+
   return (
     <section className="py-16 md:py-24 bg-[#f8fafc]">
       <div className="container mx-auto px-4">
@@ -54,27 +67,35 @@ export function OpeningHours() {
                 {DAYS_ORDER.map((day) => {
                   const daySchedule = officeHours.schedule[day]
                   const timeText = formatTimeBlocks(day)
+                  const breaksText = formatBreaks(day)
                   const isClosed = !daySchedule.isOpen
 
                   return (
                     <div
                       key={day}
-                      className={`flex justify-between items-center py-3 px-4 rounded-lg ${
+                      className={`py-3 px-4 rounded-lg ${
                         isClosed
                           ? "bg-gray-50"
                           : "bg-white border border-gray-200"
                       }`}
                     >
-                      <span className={`font-medium ${isClosed ? "text-gray-500" : "text-gray-900"}`}>
-                        {DAY_LABELS[day]}
-                      </span>
-                      <span
-                        className={`font-semibold ${
-                          isClosed ? "text-gray-500" : "text-[#059669]"
-                        }`}
-                      >
-                        {timeText}
-                      </span>
+                      <div className="flex justify-between items-center">
+                        <span className={`font-medium ${isClosed ? "text-gray-500" : "text-gray-900"}`}>
+                          {DAY_LABELS[day]}
+                        </span>
+                        <span
+                          className={`font-semibold ${
+                            isClosed ? "text-gray-500" : "text-[#059669]"
+                          }`}
+                        >
+                          {timeText}
+                        </span>
+                      </div>
+                      {breaksText && (
+                        <div className="mt-1 text-xs text-gray-500 text-right">
+                          {breaksText}
+                        </div>
+                      )}
                     </div>
                   )
                 })}

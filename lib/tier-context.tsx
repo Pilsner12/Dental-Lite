@@ -14,30 +14,57 @@ interface TierContextType {
   getRequiredTier: (feature: string) => Tier | null
 }
 
+/**
+ * LEAN TIER DISTRIBUTION
+ * 
+ * BASIC (malá ordinace - lékař + sestra):
+ * - Veřejný web, kontakt, info
+ * - Admin přístup
+ * - Kalendář/diář s termíny
+ * - Správa pacientů (zjednodušená)
+ * - Ordinační hodiny
+ * - Nastavení základní
+ * - Dashboard (dnešní přehled)
+ * - Urgentní termíny
+ * - Patient quick view tooltip
+ * 
+ * BUSINESS (rozšíření):
+ * - Vše z BASIC +
+ * - API dostupnost termínů (pro online rezervace)
+ * - Čekatelna (waiting list)
+ * - SMS připomínky
+ * - Export dat
+ * 
+ * PROFI (profesionální):
+ * - Vše z BUSINESS +
+ * - Multi-user (více lékařů)
+ * - Notifikace a automatizace
+ * - Pokročilé statistiky
+ * - Integrace třetích stran
+ * - Více křesel/pokojů
+ */
+
 const tierFeatures: Record<Tier, string[]> = {
   basic: [
+    // Veřejný web
     "public_web",
     "contact_form",
     "opening_hours",
     "team_info",
     "services_info",
-  ],
-  business: [
-    "public_web",
-    "contact_form",
-    "opening_hours",
-    "team_info",
-    "services_info",
+    
+    // Admin - základní
     "admin_access",
+    "admin_dashboard",
     "calendar",
     "patients",
-    "users",
+    "inventory",
     "settings_basic",
-    "basic_stats",
-    "sms_reminders",
-    "content_editing",
+    "urgent_appointments",
+    "patient_quick_view",
   ],
-  profi: [
+  business: [
+    // Vše z BASIC
     "public_web",
     "contact_form",
     "opening_hours",
@@ -47,52 +74,85 @@ const tierFeatures: Record<Tier, string[]> = {
     "admin_dashboard",
     "calendar",
     "patients",
-    "users",
+    "inventory",
     "settings_basic",
-    "settings_advanced",
-    "basic_stats",
+    "urgent_appointments",
+    "patient_quick_view",
+    
+    // BUSINESS rozšíření
+    "api_availability", // API pro online rezervace
+    "waitlist",
     "sms_reminders",
-    "content_editing",
-    "online_booking",
-    "booking_approval",
-    "advanced_stats",
+    "basic_export",
+    "basic_stats",
+  ],
+  profi: [
+    // Vše z BUSINESS
+    "public_web",
+    "contact_form",
+    "opening_hours",
+    "team_info",
+    "services_info",
+    "admin_access",
+    "admin_dashboard",
+    "calendar",
+    "patients",
+    "settings_basic",
+    "urgent_appointments",
+    "patient_quick_view",
+    "inventory",
+    "api_availability",
+    "waitlist",
+    "sms_reminders",
+    "basic_export",
+    "basic_stats",
+    
+    // PROFI rozšíření
+    "multi_user",
+    "users_management",
+    "notifications",
     "automation",
+    "advanced_stats",
     "integrations",
     "advanced_export",
-    "waitlist",
     "multiple_chairs",
+    "settings_advanced",
   ],
 }
 
 const featureToTier: Record<string, Tier> = {
-  // Basic features
+  // BASIC tier - vše pro malou ordinaci
   public_web: "basic",
   contact_form: "basic",
   opening_hours: "basic",
   team_info: "basic",
   services_info: "basic",
+  admin_access: "basic",
+  admin_dashboard: "basic",
+  calendar: "basic",
+  patients: "basic",
+  inventory: "basic",
+  settings_basic: "basic",
+  urgent_appointments: "basic",
+  patient_quick_view: "basic",
   
-  // Business features
-  admin_access: "business",
-  calendar: "business",
-  patients: "business",
-  users: "business",
-  settings_basic: "business",
-  basic_stats: "business",
+  // BUSINESS tier - rozšíření pro větší provoz
+  api_availability: "business",
+  waitlist: "business",
   sms_reminders: "business",
-  content_editing: "business",
+  basic_export: "business",
+  basic_stats: "business",
   
-  // Profi features
-  admin_dashboard: "profi",
-  settings_advanced: "profi",
-  online_booking: "profi",
-  booking_approval: "profi",
-  advanced_stats: "profi",
+  // PROFI tier - profesionální funkce
+  multi_user: "profi",
+  users_management: "profi",
+  notifications: "profi",
   automation: "profi",
+  advanced_stats: "profi",
   integrations: "profi",
   advanced_export: "profi",
-  waitlist: "profi",
   multiple_chairs: "profi",
+  settings_advanced: "profi",
 }
 
 const TierContext = createContext<TierContextType | undefined>(undefined)

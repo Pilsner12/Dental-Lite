@@ -27,11 +27,14 @@ export function OfficeHoursEditor() {
     addTimeBlock,
     removeTimeBlock,
     updateTimeBlock,
+    addBreak,
+    removeBreak,
+    updateBreak,
     validateTimeBlock
   } = useOfficeHours()
 
   const [errors, setErrors] = useState<Record<string, string[]>>({})
-
+  const [editingBreakId, setEditingBreakId] = useState<string | null>(null)
   const handleDayToggle = (day: string, checked: boolean) => {
     const daySchedule = officeHours.schedule[day as DayOfWeek]
     updateDaySchedule(day as DayOfWeek, {
@@ -100,10 +103,31 @@ export function OfficeHoursEditor() {
     })
   }
 
+  const handleAddBreak = (day: string) => {
+    addBreak(day as DayOfWeek, {
+      name: "Obědová pauza",
+      startTime: "11:00",
+      endTime: "12:00"
+    })
+  }
+
+  const handleRemoveBreak = (day: string, breakId: string) => {
+    removeBreak(day as DayOfWeek, breakId)
+  }
+
+  const handleBreakChange = (
+    day: string,
+    breakId: string,
+    field: 'name' | 'startTime' | 'endTime',
+    value: string
+  ) => {
+    updateBreak(day as DayOfWeek, breakId, { [field]: value })
+  }
+
   return (
     <div className="space-y-6">
-      {/* Days Schedule */}
-      <div className="space-y-4">
+      {/* Days Schedule - 2 column grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {DAYS_ORDER.map(day => {
           const daySchedule = officeHours.schedule[day as DayOfWeek]
 
@@ -122,7 +146,7 @@ export function OfficeHoursEditor() {
                 </div>
 
                 {!daySchedule.isOpen && (
-                  <span className="text-red-600 font-medium">ZAVŘENO</span>
+                  <span className="text-red-600 font-medium text-sm">ZAVŘENO</span>
                 )}
               </div>
 
@@ -187,6 +211,59 @@ export function OfficeHoursEditor() {
                   >
                     <Plus className="w-3 h-3 mr-1" />
                     Přidat časový blok
+                  </Button>
+
+                  {/* Breaks Section */}
+                  {daySchedule.breaks && daySchedule.breaks.length > 0 && (
+                    <div className="mt-4 pt-3 border-t space-y-2">
+                      <div className="text-xs text-gray-500 font-medium uppercase">Pauzy</div>
+                      {daySchedule.breaks.map((breakItem) => (
+                        <div key={breakItem.id} className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="text"
+                              value={breakItem.name}
+                              onChange={(e) => handleBreakChange(day, breakItem.id, 'name', e.target.value)}
+                              className="flex-1 h-8 text-sm"
+                              placeholder="Název pauzy"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveBreak(day, breakItem.id)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="time"
+                              value={breakItem.startTime}
+                              onChange={(e) => handleBreakChange(day, breakItem.id, 'startTime', e.target.value)}
+                              className="w-32 h-8 text-sm"
+                            />
+                            <span className="text-gray-500">-</span>
+                            <Input
+                              type="time"
+                              value={breakItem.endTime}
+                              onChange={(e) => handleBreakChange(day, breakItem.id, 'endTime', e.target.value)}
+                              className="w-32 h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAddBreak(day)}
+                    className="mt-2 text-xs"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Přidat pauzu
                   </Button>
                 </div>
               )}

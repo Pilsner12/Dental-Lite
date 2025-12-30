@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -11,6 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { MOCK_PATIENTS, type Patient } from "@/lib/mock-patients"
 
 export default function PatientsPage() {
+  const searchParams = useSearchParams()
+  const patientIdFromUrl = searchParams.get("id")
+  
   const [patients, setPatients] = useState<Patient[]>(MOCK_PATIENTS)
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [editedPatient, setEditedPatient] = useState<Patient | null>(null)
@@ -21,6 +25,17 @@ export default function PatientsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [tagFilter, setTagFilter] = useState("all")
   const [sortBy, setSortBy] = useState("name")
+
+  // Open patient detail if ID is in URL
+  useEffect(() => {
+    if (patientIdFromUrl) {
+      const patient = patients.find(p => p.id === patientIdFromUrl)
+      if (patient) {
+        setSelectedPatient(patient)
+        setIsDetailOpen(true)
+      }
+    }
+  }, [patientIdFromUrl, patients])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("cs-CZ", {
